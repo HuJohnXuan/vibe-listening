@@ -4,6 +4,8 @@
 
 一个面向 PC 浏览器的暖色沉浸式 R&B 播放器前端 MVP。
 
+在线预览：[R&B Fireplace Radar Web MVP](https://rnb-fireplace-radar.huyixuan.chatgpt.site)
+
 ## 快速开始
 
 要求 Node.js `>=22.13.0`。
