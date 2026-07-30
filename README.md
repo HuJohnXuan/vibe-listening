@@ -47,6 +47,10 @@ npm run dev
 当前没有运行时环境变量或外部服务配置。站点的设计令牌集中定义在
 `app/globals.css` 的 `:root` 中。
 
+公开 Web 版本通过 OpenAI Sites 部署；站点绑定信息保存在
+`.openai/hosting.json`，其中不包含密钥。详细说明见
+[docs/CONFIGURATION.md](docs/CONFIGURATION.md)。
+
 ## 项目结构
 
 - `app/`：页面入口、布局和全局视觉样式；
