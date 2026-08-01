@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-08-01
+goal: Persist anonymous device user favorites, Later queue, playback history,
+  and preferences through a deployed HTTPS API.
