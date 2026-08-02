@@ -10,3 +10,7 @@
 `d1`、`r2` 资源声明。该文件不包含访问令牌或其他密钥。
 
 部署凭据由发布平台临时签发，不写入源码、日志或配置文件。
+
+## Vercel deployment
+
+Vercel uses Node.js `22.x` for this project. The `npm run build` command runs the native Next.js production build; do not override the build command or output directory in Vercel project settings.

@@ -1,5 +1,11 @@
 # 变更日志
 
+## 2026-08-02
+
+### Fixed
+
+- Fixed Vercel deployment builds by using Next.js build commands and the Vercel-supported Node.js `22.x` runtime. The previous Vinext command targeted Cloudflare and did not match Vercel's Next.js deployment runtime.
+
 ## 2026-07-26
 
 ### 新增

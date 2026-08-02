@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22.13.0"
+    "node": "22.x"
   },
   "scripts": {
-    "dev": "node ./node_modules/vinext/dist/cli.js dev",
-    "build": "node ./node_modules/vinext/dist/cli.js build",
-    "start": "node ./node_modules/vinext/dist/cli.js start",
+    "dev": "node ./node_modules/next/dist/bin/next dev",
+    "build": "node ./node_modules/next/dist/bin/next build",
+    "start": "node ./node_modules/next/dist/bin/next start",
     "test": "npm run build && node --test tests/*.test.mjs",
     "lint": "node ./node_modules/eslint/bin/eslint.js . --ignore-pattern dist --ignore-pattern .next"
   },

@@ -97,8 +97,11 @@ interface TonightsPicksProps {
   readonly isInLater: (trackId: string) => boolean;
 }
 
-interface RecommendationRowProps extends TonightsPicksProps {
+interface RecommendationRowProps {
   readonly recommendation: RecommendedTrack;
+  readonly onPlayTrack: (trackId: string) => void;
+  readonly onAddToLater: (trackId: string) => void;
+  readonly isInLater: (trackId: string) => boolean;
 }
 
 function LaterAddButton({

@@ -82,3 +82,7 @@ npm test
 ## 变更日志
 
 见 [CHANGELOG.md](CHANGELOG.md)。
+
+## Vercel deployment
+
+Use Node.js `22.x` in Vercel. Keep the Build Command set to `npm run build` and leave Output Directory empty. The project uses the native Next.js build command for Vercel compatibility.

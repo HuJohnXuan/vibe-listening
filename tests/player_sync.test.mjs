@@ -56,3 +56,12 @@ test("testProvidesResolvedLaterTracksForPlayAndRemoveActions", () => {
   assert.match(pageSource, /onRemoveTrack=\{later\.removeTrack\}/);
   assert.match(pageSource, /onPlayTrack=\{player\.playTrack\}/);
 });
+
+test("testRecommendationRowDoesNotRequireTheParentPicksCollection", () => {
+  const pageSource = readFileSync(playerPagePath, "utf8");
+
+  assert.doesNotMatch(
+    pageSource,
+    /interface RecommendationRowProps extends TonightsPicksProps/,
+  );
+});
