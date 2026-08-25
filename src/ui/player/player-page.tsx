@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from "react";
 import { formatPlaybackTime } from "../../core/player/player-state.ts";
+import { buildListeningAtmosphere } from "../../core/vibe/build-listening-atmosphere.ts";
 import type {
   RadarRecommendations,
   RecommendedTrack,
@@ -39,7 +40,7 @@ function TurntableRegion(
 ) {
   return (
     <section className="turntable-region" data-region="turntable" aria-label="黑胶播放区域">
-      <span className="turntable-signature">Rhythm and Blues</span>
+      <span className="turntable-signature">Vibe Listening</span>
       <div className="turntable-plinth">
         <div className={`record${isPlaying ? " is-playing" : ""}`} aria-hidden="true">
           <div className="record-label"><img src={track.coverUrl} alt="" /><i /></div>
@@ -59,11 +60,28 @@ function TurntableRegion(
 function CurrentTrack({ track }: { track: Track }) {
   return (
     <header className="current-track" data-section="current-track" data-track-id={track.id}>
-      <span className="eyebrow">NOW IN THE ROOM</span>
+      <span className="eyebrow">NOW PLAYING</span>
       <h1>{track.title}</h1>
       <p className="track-meta">{track.artist} <i /> {track.album}</p>
       <blockquote>“{track.lyricsExcerpt}”</blockquote>
     </header>
+  );
+}
+
+function ListeningAtmosphere({ track }: { track: Track }) {
+  const [memory, setMemory] = useState("");
+  const atmosphere = buildListeningAtmosphere({ track, memory });
+  return (
+    <section className="listening-atmosphere" data-section="listening-atmosphere">
+      <div className="section-heading"><h2>{atmosphere.title}</h2><span>VIBE</span></div>
+      <p className="atmosphere-background">{atmosphere.background}</p>
+      <p>{atmosphere.detail}</p>
+      <label htmlFor={`memory-${track.id}`}>给这首歌留一句记忆</label>
+      <textarea id={`memory-${track.id}`} value={memory} maxLength={60}
+        placeholder="例如：下雨的末班车" aria-label="给这首歌留一句记忆"
+        onChange={(event) => setMemory(event.currentTarget.value)} />
+      <p className="memory-effect" data-memory-effect="true">{atmosphere.memoryEffect}</p>
+    </section>
   );
 }
 
@@ -318,6 +336,7 @@ function ListeningRegion(
   return (
     <section className="listening-region" data-region="listening" aria-label="歌曲与发现区域">
       <CurrentTrack track={track} />
+      <ListeningAtmosphere track={track} />
       <ListeningNotes track={track} />
       <div className="discovery-tools">
         <RadarDisclosure radar={radar} onAddToLater={later.addTrack}
@@ -428,7 +447,7 @@ export function PlayerPage({ playlist, recommendations }: PlayerPageProps) {
         onEnded={player.markPaused}
       />
       <div className="ambient-light" aria-hidden="true" />
-      <header className="room-header"><span>RFR</span><i /><span>ANALOG LISTENING SYSTEM</span></header>
+      <header className="room-header"><span>VL</span><i /><span>SONG × MEMORY LISTENING</span></header>
       <div className="stage-grid">
         <TurntableRegion track={displayTrack} isPlaying={player.isPlaying} />
         <ListeningRegion

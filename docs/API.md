@@ -1,5 +1,13 @@
 # 内部 API
 
+## buildListeningAtmosphere
+
+位置：`src/core/vibe/build-listening-atmosphere.ts`
+
+用途：根据当前歌曲的情绪、制作标签生成听歌背景；当用户提供一句记忆时，
+将它以本地、即时的方式加入氛围文案。输入为 `Track` 与 `memory`，输出标题、
+背景、歌曲细节和记忆加成说明。该函数是纯函数，不读取浏览器存储、不上传记忆。
+
 ## buildDiscovery
 
 位置：`src/services/discovery/build-discovery.ts`

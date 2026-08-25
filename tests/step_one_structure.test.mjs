@@ -63,7 +63,7 @@ test("testOmitsOutOfScopeEntryPointsWhenApplicationOpens", () => {
   }
 });
 
-test("testPlacesRhythmAndBluesSignatureOutsideRecordWhenTurntableRenders", () => {
+test("testPlacesVibeListeningSignatureOutsideRecordWhenTurntableRenders", () => {
   const pageSource = readPageSources();
   const recordLabel = pageSource.match(
     /className="record-label">([\s\S]*?)<\/div>/,
@@ -71,7 +71,7 @@ test("testPlacesRhythmAndBluesSignatureOutsideRecordWhenTurntableRenders", () =>
 
   assert.match(
     pageSource,
-    /className="turntable-signature">Rhythm and Blues<\/span>/,
+    /className="turntable-signature">Vibe Listening<\/span>/,
   );
   assert.ok(recordLabel);
   assert.doesNotMatch(recordLabel[1], /R&amp;B/);

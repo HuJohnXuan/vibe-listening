@@ -392,6 +392,57 @@ button {
   border-bottom: 1px solid var(--border-subtle);
 }
 
+.listening-atmosphere {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.listening-atmosphere > p {
+  margin: 7px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.listening-atmosphere .atmosphere-background {
+  color: var(--color-champagne);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.listening-atmosphere label {
+  display: block;
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.listening-atmosphere textarea {
+  display: block;
+  width: 100%;
+  min-height: 35px;
+  margin-top: 6px;
+  padding: 8px 9px;
+  resize: vertical;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.35;
+  background: rgba(32, 16, 16, 0.36);
+}
+
+.listening-atmosphere textarea:focus-visible {
+  outline: 2px solid var(--color-champagne);
+  outline-offset: 2px;
+}
+
+.listening-atmosphere .memory-effect {
+  color: rgba(244, 210, 138, 0.72);
+}
+
 .listening-notes .section-heading h2 {
   color: var(--text-secondary);
 }

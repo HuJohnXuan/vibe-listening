@@ -2,8 +2,9 @@
 
 ## 当前边界
 
-当前已完成本地曲库、推荐核心、主页数据接入、本地试听播放，以及 Radar 和
-Later 两个展开面板。
+当前已完成本地曲库、推荐核心、歌曲氛围生成、主页数据接入、本地试听播放，
+以及 Radar 和 Later 两个展开面板。产品名称为 Vibe Listening，核心体验为
+“歌曲 × 记忆”。
 
 ```text
 app 页面入口
@@ -47,6 +48,7 @@ PlayerPage
       → useLocalAudio：浏览器 Audio 元素、时间与播放状态
       → useLaterQueue：独立保存曲目 ID，并按队列顺序解析完整歌曲
       → buildDiscovery：当前歌曲对应的 Picks 与 Radar
+      → buildListeningAtmosphere：歌曲标签与当前输入记忆生成专属氛围
   → player-state：索引循环与时间格式纯函数
   → record / tonearm：只消费 isPlaying 动效状态
 ```

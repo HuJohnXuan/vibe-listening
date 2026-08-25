@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "R&B Fireplace Radar",
-  description: "A warm, private desktop listening room for R&B.",
+  title: "Vibe Listening",
+  description: "让歌曲与记忆共同生成专属听歌氛围。",
 };
 
 export default function RootLayout({

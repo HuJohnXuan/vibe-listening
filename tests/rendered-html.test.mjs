@@ -28,7 +28,7 @@ test("testRendersPlayerCanvasWhenHomePageLoads", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>R&amp;B Fireplace Radar<\/title>/i);
+  assert.match(html, /<title>Vibe Listening<\/title>/i);
   assert.match(html, /data-region="turntable"/);
   assert.match(html, /data-region="listening"/);
   assert.match(html, /data-region="player-controls"/);
@@ -72,6 +72,16 @@ test("testRendersListeningNotesAsFourCompactTagGroupsWhenHomePageLoads", async (
   assert.match(html, /像壁炉将熄未熄时的余温/);
   assert.equal(noteGroups.length, 4);
   assert.equal(noteTags.length, 8);
+});
+
+test("testRendersSongMemoryAtmosphereWhenHomePageLoads", async () => {
+  const response = await render();
+  const html = await response.text();
+
+  assert.match(html, /data-section="listening-atmosphere"/);
+  assert.match(html, /这首歌的听歌氛围/);
+  assert.match(html, /aria-label="给这首歌留一句记忆"/);
+  assert.match(html, /写下一段和它有关的记忆/);
 });
 
 test("testRendersOperableLocalAudioControlsWhenHomePageLoads", async () => {
