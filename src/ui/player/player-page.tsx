@@ -4,6 +4,8 @@
 import { useState } from "react";
 import { formatPlaybackTime } from "../../core/player/player-state.ts";
 import { buildListeningAtmosphere } from "../../core/vibe/build-listening-atmosphere.ts";
+import type { ListeningAtmosphere as Atmosphere } from "../../core/vibe/build-listening-atmosphere.ts";
+import { ListeningRoom } from "./listening-room.tsx";
 import type {
   RadarRecommendations,
   RecommendedTrack,
@@ -36,11 +38,12 @@ interface PlayerPageProps {
 }
 
 function TurntableRegion(
-  { track, isPlaying }: { track: Track; isPlaying: boolean },
+  { track, isPlaying, atmosphere, onTogglePlayback }: { track: Track; isPlaying: boolean; atmosphere: Atmosphere; onTogglePlayback: () => void },
 ) {
   return (
     <section className="turntable-region" data-region="turntable" aria-label="黑胶播放区域">
       <span className="turntable-signature">Vibe Listening</span>
+      <ListeningRoom state={{ room: atmosphere.room, isPlaying, coverUrl: track.coverUrl }} onTogglePlayback={onTogglePlayback}>
       <div className="turntable-plinth">
         <div className={`record${isPlaying ? " is-playing" : ""}`} aria-hidden="true">
           <div className="record-label"><img src={track.coverUrl} alt="" /><i /></div>
@@ -53,6 +56,7 @@ function TurntableRegion(
         </div>
         <div className="metal-control" aria-hidden="true" />
       </div>
+      </ListeningRoom>
     </section>
   );
 }
@@ -68,9 +72,9 @@ function CurrentTrack({ track }: { track: Track }) {
   );
 }
 
-function ListeningAtmosphere({ track }: { track: Track }) {
-  const [memory, setMemory] = useState("");
-  const atmosphere = buildListeningAtmosphere({ track, memory });
+function ListeningAtmosphere({ track, memory, setMemory, atmosphere }: {
+  track: Track; memory: string; setMemory: (value: string) => void; atmosphere: Atmosphere;
+}) {
   return (
     <section className="listening-atmosphere" data-section="listening-atmosphere">
       <div className="section-heading"><h2>{atmosphere.title}</h2><span>VIBE</span></div>
@@ -81,6 +85,7 @@ function ListeningAtmosphere({ track }: { track: Track }) {
         placeholder="例如：下雨的末班车" aria-label="给这首歌留一句记忆"
         onChange={(event) => setMemory(event.currentTarget.value)} />
       <p className="memory-effect" data-memory-effect="true">{atmosphere.memoryEffect}</p>
+      <small className="memory-privacy">只留在本次页面 · 试试「下雨的末班车」或「冬日炉边」</small>
     </section>
   );
 }
@@ -325,18 +330,22 @@ function ListeningRegion(
     radar,
     player,
     later,
+    memory, setMemory, atmosphere,
   }: {
     track: Track;
     picks: readonly RecommendedTrack[];
     radar: RadarRecommendations;
     player: LocalAudioController;
     later: LaterQueueController;
+    memory: string;
+    setMemory: (value: string) => void;
+    atmosphere: Atmosphere;
   },
 ) {
   return (
     <section className="listening-region" data-region="listening" aria-label="歌曲与发现区域">
       <CurrentTrack track={track} />
-      <ListeningAtmosphere track={track} />
+      <ListeningAtmosphere track={track} memory={memory} setMemory={setMemory} atmosphere={atmosphere} />
       <ListeningNotes track={track} />
       <div className="discovery-tools">
         <RadarDisclosure radar={radar} onAddToLater={later.addTrack}
@@ -424,7 +433,10 @@ function TransportControls({ player }: { player: LocalAudioController }) {
           <i className="next-glyph" aria-hidden="true" />
         </button>
       </div>
-      <div className="volume-guide" aria-hidden="true"><i /><span /></div>
+      <label className="volume-guide"><span>音量</span>
+        <input type="range" min="0" max="1" step="0.05" value={player.volume}
+          aria-label="音量" onChange={event => player.setVolume(Number(event.currentTarget.value))} />
+      </label>
     </div>
   );
 }
@@ -432,6 +444,10 @@ function TransportControls({ player }: { player: LocalAudioController }) {
 export function PlayerPage({ playlist, recommendations }: PlayerPageProps) {
   const { audioRef, player, later, displayTrack, discovery } =
     usePlayerView(playlist, recommendations);
+  const [memories, setMemories] = useState<Record<string, string>>({});
+  const memory = memories[displayTrack.id] ?? "";
+  const setMemory = (value: string) => setMemories(current => ({ ...current, [displayTrack.id]: value }));
+  const atmosphere = buildListeningAtmosphere({ track: displayTrack, memory });
   return (
     <main className="room-shell">
       <audio
@@ -445,17 +461,19 @@ export function PlayerPage({ playlist, recommendations }: PlayerPageProps) {
         onPlay={player.markPlaying}
         onPause={player.markPaused}
         onEnded={player.markPaused}
+        onError={player.markError}
       />
       <div className="ambient-light" aria-hidden="true" />
       <header className="room-header"><span>VL</span><i /><span>SONG × MEMORY LISTENING</span></header>
       <div className="stage-grid">
-        <TurntableRegion track={displayTrack} isPlaying={player.isPlaying} />
+        <TurntableRegion track={displayTrack} isPlaying={player.isPlaying} atmosphere={atmosphere} onTogglePlayback={player.togglePlayback} />
         <ListeningRegion
           track={displayTrack}
           picks={discovery.tonightsPicks}
           radar={discovery.radar}
           player={player}
           later={later}
+          memory={memory} setMemory={setMemory} atmosphere={atmosphere}
         />
       </div>
       <PlayerControls player={player} />

@@ -68,3 +68,9 @@ ID；Later 面板消费解析后的歌曲列表，播放继续调用统一音频
 所有控件共用暖白默认态、克制位移反馈、香槟金聚焦环；玫红只用于进度和喜欢选中态。
 常见笔记本宽度只收紧画布边距、双栏间距和面板内边距，不改变桌面双栏结构。
 未来真实数据必须经 `adapters → services → UI` 边界接入，具体约束见 `FUTURE_API.md`。
+
+## 3D 房间（2026-09-07）
+
+`PlayerPage` 按 track ID 持有本次会话的记忆，并调用纯函数 `buildListeningAtmosphere` 生成文字和 `RoomMood`。`ListeningRoom` 动态加载 `create-room-scene.ts`，把场景状态传给 Three.js；几何体和灯光只初始化一次，切歌仅更新封面、天气与光线。渲染器不访问网络服务或用户存储。
+
+右侧区域独立滚动，Radar/Later 在文档流内展开。播放、暂停和重播统一使用 Audio 元素；场景不会自行发声或改变播放顺序。细节与限制见 [3D_ROOM.md](3D_ROOM.md)。

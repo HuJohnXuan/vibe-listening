@@ -16,6 +16,9 @@ export interface LocalAudioController {
   readonly durationSeconds: number;
   readonly isPlaying: boolean;
   readonly playbackError: string;
+  readonly volume: number;
+  readonly setVolume: (value: number) => void;
+  readonly markError: () => void;
   readonly togglePlayback: () => void;
   readonly seek: (nextSeconds: number) => void;
   readonly playPrevious: () => void;
@@ -35,6 +38,7 @@ export function useLocalAudio(playlist: readonly Track[]) {
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackError, setPlaybackError] = useState("");
+  const [volume, setVolumeState] = useState(1);
   const audioTrack = playlist[trackIndex];
 
   useEffect(() => {
@@ -45,18 +49,31 @@ export function useLocalAudio(playlist: readonly Track[]) {
     setDurationSeconds(0);
     setPlaybackError("");
     if (resumeAfterChangeRef.current) {
-      void audio.play().catch(() => setPlaybackError(PLAYBACK_ERROR));
+      const source = audio.src;
+      void audio.play().catch((error: unknown) => {
+        if (audio.src === source && !(error instanceof DOMException && error.name === "AbortError")) {
+          setPlaybackError(PLAYBACK_ERROR);
+        }
+      });
     }
   }, [audioTrack.previewAudioUrl]);
 
-  function togglePlayback() {
+  function startPlayback() {
     const audio = audioRef.current;
     if (!audio) return;
-    if (audio.paused) {
-      void audio.play().catch(() => setPlaybackError(PLAYBACK_ERROR));
-    } else {
-      audio.pause();
-    }
+    setPlaybackError("");
+    if (audio.ended) audio.currentTime = 0;
+    const source = audio.src;
+    void audio.play().catch((error: unknown) => {
+      if (audio.src === source && !(error instanceof DOMException && error.name === "AbortError")) {
+        setPlaybackError(PLAYBACK_ERROR);
+      }
+    });
+  }
+
+  function togglePlayback() {
+    if (audioRef.current?.paused) startPlayback();
+    else audioRef.current?.pause();
   }
 
   function selectTrack(nextIndex: number) {
@@ -67,25 +84,42 @@ export function useLocalAudio(playlist: readonly Track[]) {
   function playTrack(trackId: string) {
     const nextIndex = getTrackIndexById(playlist, trackId);
     if (nextIndex < 0) return;
+    if (nextIndex === trackIndex) {
+      startPlayback();
+      return;
+    }
     resumeAfterChangeRef.current = true;
     setTrackIndex(nextIndex);
   }
 
   function seek(nextSeconds: number) {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = nextSeconds;
-    setElapsedSeconds(nextSeconds);
+    const audio = audioRef.current;
+    if (!audio || !Number.isFinite(nextSeconds) || !Number.isFinite(audio.duration)) return;
+    const target = Math.max(0, Math.min(nextSeconds, audio.duration));
+    audio.currentTime = target;
+    setElapsedSeconds(target);
   }
 
   const controller: LocalAudioController = {
     audioTrack, elapsedSeconds, durationSeconds, isPlaying,
     playbackError, togglePlayback, seek,
+    volume,
+    setVolume: (value) => {
+      if (!Number.isFinite(value)) return;
+      const next = Math.max(0, Math.min(1, value));
+      if (audioRef.current) audioRef.current.volume = next;
+      setVolumeState(next);
+    },
+    markError: () => { setIsPlaying(false); setPlaybackError(PLAYBACK_ERROR); },
     playPrevious: () => selectTrack(getPreviousTrackIndex(trackIndex, playlist.length)),
     playNext: () => selectTrack(getNextTrackIndex(trackIndex, playlist.length)),
     playTrack,
     syncElapsed: () => setElapsedSeconds(audioRef.current?.currentTime ?? 0),
-    syncDuration: () => setDurationSeconds(audioRef.current?.duration ?? 0),
-    markPlaying: () => setIsPlaying(true),
+    syncDuration: () => {
+      const duration = audioRef.current?.duration ?? 0;
+      setDurationSeconds(Number.isFinite(duration) ? duration : 0);
+    },
+    markPlaying: () => { setIsPlaying(true); setPlaybackError(""); },
     markPaused: () => setIsPlaying(false),
   };
 

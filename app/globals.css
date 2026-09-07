@@ -64,7 +64,7 @@ button {
   display: grid;
   grid-template-rows: 28px minmax(0, 1fr) 92px;
   gap: 12px;
-  width: min(1080px, calc(100vw - 56px));
+  width: min(1440px, calc(100vw - 56px));
   height: calc(100svh - 32px);
   margin: 16px auto;
   isolation: isolate;
@@ -104,7 +104,7 @@ button {
 
 .stage-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.45fr) minmax(350px, 1fr);
   gap: 18px;
   min-height: 0;
 }
@@ -299,7 +299,11 @@ button {
   display: flex;
   flex-direction: column;
   padding: 22px 24px 18px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #9a6f2c transparent;
+  scroll-padding-block: 20px;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   background:
@@ -569,7 +573,8 @@ button {
 }
 
 .radar-disclosure[open] {
-  position: absolute;
+  position: relative;
+  grid-column: 1 / -1;
   z-index: 5;
   inset: 0;
   margin: 0;
@@ -588,7 +593,8 @@ button {
 }
 
 .later-disclosure[open] {
-  position: absolute;
+  position: relative;
+  grid-column: 1 / -1;
   z-index: 5;
   inset: 0;
   margin: 0;
@@ -639,7 +645,7 @@ button {
 .radar-panel {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 31px);
+  height: auto;
   animation: radar-reveal 220ms ease-out both;
 }
 
@@ -706,7 +712,7 @@ button {
 .later-panel {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 31px);
+  height: auto;
   animation: later-reveal 220ms ease-out both;
 }
 
@@ -730,6 +736,7 @@ button {
 
 .later-list {
   min-height: 0;
+  max-height: 280px;
   overflow-y: auto;
 }
 
@@ -877,7 +884,7 @@ button {
 
 .tonights-picks {
   display: flex;
-  flex: 1;
+  flex: 0 0 auto;
   flex-direction: column;
   min-height: 0;
   padding-top: 14px;
@@ -885,8 +892,7 @@ button {
 
 .recommendation-list {
   display: grid;
-  grid-template-rows: repeat(3, minmax(0, 1fr));
-  flex: 1;
+  grid-template-rows: repeat(3, minmax(76px, auto));
   min-height: 0;
   margin-top: 7px;
 }
@@ -1269,10 +1275,46 @@ button {
 }
 
 .volume-guide span {
-  width: 72px;
-  height: 3px;
-  border-radius: 999px;
-  background: rgba(248, 244, 238, 0.11);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.volume-guide input { width: 76px; accent-color: var(--color-champagne); cursor: pointer; }
+.volume-guide input:focus-visible { outline: 2px solid var(--color-champagne); outline-offset: 4px; }
+.listening-region > * { flex-shrink: 0; }
+.memory-privacy { display: block; font-size: 10px; color: var(--text-secondary); line-height: 1.6; }
+
+/* The room is a perspective WebGL scene; the original turntable is its fallback. */
+.turntable-region:has(.listening-room) {
+  padding: 0;
+  background: radial-gradient(ellipse at 50% 42%, #4d3829, #241b16 80%);
+}
+.turntable-region .turntable-signature { z-index: 2; pointer-events: none; }
+.listening-room { position: relative; width: 100%; height: 100%; min-height: 400px; }
+.room-canvas { position: absolute; inset: 36px 0 60px; cursor: grab; }
+.room-canvas:active { cursor: grabbing; }
+.room-canvas canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.record-closeup { position: absolute; inset: 80px 28px 105px; display: grid; place-items: center; }
+.record-closeup .turntable-plinth { width: min(100%, 450px); }
+.room-view-tools { position: absolute; top: 22px; right: 20px; z-index: 3; display: flex; gap: 4px; }
+.room-view-tools button, .room-camera-controls button {
+  border: 1px solid var(--border-subtle); border-radius: 999px; padding: 7px 10px;
+  background: rgba(28, 20, 16, 0.6); color: var(--text-secondary); font-size: 10px; cursor: pointer;
+}
+.room-view-tools button[aria-pressed="true"] { color: var(--color-champagne); border-color: #9a6f2c; }
+.room-view-tools button:disabled { cursor: default; opacity: 0.45; }
+.room-view-tools button:focus-visible, .room-camera-controls button:focus-visible { outline: 2px solid var(--color-champagne); outline-offset: 3px; }
+.room-caption { position: absolute; bottom: 25px; left: 28px; pointer-events: none; }
+.room-caption-kicker { display: block; color: var(--color-champagne); letter-spacing: 0.18em; font-size: 8px; margin-bottom: 8px; }
+.room-caption strong { font-family: Georgia, "Noto Serif SC", serif; font-size: 24px; font-weight: 400; }
+.room-caption p { font-size: 11px; color: var(--text-secondary); margin: 8px 0 0; }
+.room-camera-controls { position: absolute; bottom: 28px; right: 22px; display: flex; gap: 5px; }
+
+@media (max-width: 1100px) {
+  .room-view-tools { top: 65px; right: 16px; }
+  .room-caption { left: 20px; bottom: 22px; }
+  .room-caption strong { font-size: 20px; }
+  .room-camera-controls { bottom: 90px; right: 16px; }
 }
 
 .playback-error {
@@ -1406,3 +1448,11 @@ button {
     transition: none;
   }
 }
+
+.room-interactions { position: absolute; z-index: 3; top: 70px; left: 28px; right: 20px; display: flex; flex-wrap: wrap; gap: 6px; }
+.room-interactions button { border: 1px solid var(--border-subtle); border-radius: 999px; padding: 7px 11px; background: rgba(28,20,16,.72); color: var(--text-secondary); font-size: 11px; cursor: pointer; }
+.room-interactions button[aria-pressed="true"] { color: var(--color-champagne); border-color: rgba(244,210,138,.25); }
+.room-interactions button:hover { color: var(--color-cream); border-color: var(--color-champagne); }
+.room-interactions button:focus-visible { outline: 2px solid var(--color-champagne); outline-offset: 3px; }
+.room-interactions .room-follow-song { background: transparent; text-decoration: underline; }
+@media (max-width: 1100px) { .room-interactions { top: 104px; left: 16px; } .room-interactions button { padding: 5px 8px; font-size: 10px; } }

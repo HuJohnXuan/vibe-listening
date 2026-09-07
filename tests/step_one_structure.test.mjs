@@ -121,7 +121,7 @@ test("testExpandsRadarAsWarmInnerSleeveWithoutScanningEffects", () => {
 
   assert.match(
     styleSource,
-    /\.radar-disclosure\[open\]\s*\{[^}]*position:\s*absolute/s,
+    /\.radar-disclosure\[open\]\s*\{[^}]*position:\s*relative/s,
   );
   assert.match(
     styleSource,
@@ -139,7 +139,7 @@ test("testPlacesRadarAndLaterInSharedToolRowWithMatchingInnerSleeves", () => {
   );
   assert.match(
     styleSource,
-    /\.later-disclosure\[open\]\s*\{[^}]*position:\s*absolute/s,
+    /\.later-disclosure\[open\]\s*\{[^}]*position:\s*relative/s,
   );
   assert.match(
     styleSource,

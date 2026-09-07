@@ -1,25 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 
 async function render() {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-
-  return worker.fetch(
-    new Request("http://localhost/", {
-      headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
+  // npm test builds Next immediately before these assertions. Never read old Vite dist.
+  const html = await readFile(new URL("../.next/server/app/index.html", import.meta.url), "utf8");
+  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
 }
 
 test("testRendersPlayerCanvasWhenHomePageLoads", async () => {
@@ -147,4 +133,14 @@ test("testRendersAccessibleFavoriteControlWhenPlayerLoads", async () => {
   assert.match(html, /aria-label="喜欢当前歌曲"/);
   assert.match(html, /aria-pressed="false"/);
   assert.match(html, /title="喜欢当前歌曲"/);
+});
+
+test("production HTML includes room fallback, camera entry points and real volume", async () => {
+  const html = await (await render()).text();
+  assert.match(html, /data-room-status="loading"/);
+  assert.match(html, /房间全景/);
+  assert.match(html, /唱机特写/);
+  assert.match(html, /class="record-closeup"/);
+  assert.match(html, /type="range"[^>]+aria-label="音量"/);
+  assert.match(html, /只留在本次页面/);
 });
