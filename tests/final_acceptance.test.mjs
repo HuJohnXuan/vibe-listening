@@ -47,9 +47,11 @@ test("testDocumentsFutureApiBoundaryWithoutAddingIntegration", () => {
   assert.match(integrationGuide, /不在当前 MVP|not part of the current MVP/i);
 });
 
-test("testMarksAllTwelvePlanStepsAsCompleteInReadme", () => {
+test("testReadmeLinksResolveToProjectDocumentation", () => {
   const readme = readProjectFile("README.md");
 
-  assert.match(readme, /第 1–12 步/);
+  for (const match of readme.matchAll(/\]\((docs\/[^)#]+)(?:#[^)]*)?\)/g)) {
+    assert.equal(existsSync(join(projectRoot, match[1])), true, match[1]);
+  }
   assert.match(readme, /FUTURE_API\.md/);
 });

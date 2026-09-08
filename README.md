@@ -1,98 +1,103 @@
 # Vibe Listening
 
-## 项目简介（一句话）
+### 给每首歌一个可以待下来的房间。
 
-一个让歌曲与用户记忆共同生成专属听歌氛围的 PC 浏览器播放器 MVP。
+*A cozy, interactive 3D listening room — shaped by songs and your memories.*
 
-在线预览：现有部署仍使用旧域名；重新部署后请将链接更新为 Vibe Listening 的正式地址。
+拖动视角，点亮落地灯，让窗外下起雨。写下一句和这首歌有关的记忆，再把时间留给黑胶与炉火。
+
+**Vibe Listening** 是一个运行在桌面浏览器里的沉浸式 R&B 播放器实验，用 Three.js 搭建真实的立体房间，让听歌多一点空间感和参与感。
+
+![Vibe Listening：3D 房间与歌曲发现界面的实际运行截图](docs/images/listening-room.jpg)
+
+[快速开始](#快速开始) · [互动玩法](#房间里可以做什么) · [实现细节](docs/3D_ROOM.md) · [反馈想法](https://github.com/HuJohnXuan/vibe-listening/issues)
+
+> 当前为可运行的体验 Demo：10 首虚构曲目，每首提供 6 秒本地合成试听。无需账号、API Key 或后端服务。
+
+## 房间里可以做什么
+
+| 你的动作 | 房间的回应 |
+| --- | --- |
+| 拖动房间，或使用视角按钮 | 从不同角度看沙发、唱片柜、窗户和壁炉 |
+| 点击唱机 | 播放或暂停，唱片与唱臂跟随播放状态 |
+| 点击落地灯 | 开关灯光，改变房间的明暗 |
+| 点击壁炉 | 开关炉火与暖光 |
+| 点击窗户 | 在晴、雨、雪之间切换；“跟随歌曲”恢复自动氛围 |
+| 切换“唱机特写” | 靠近黑胶，回到专注的唱机视图 |
+
+房间操作也有可通过键盘访问的按钮。拖动视角不会顺带触发物件开关；WebGL 不可用时自动回退到唱机视图。
+
+## 歌曲 × 记忆
+
+同一首歌，可以属于不同的夜晚。
+
+在歌曲的记忆输入框里试试 **“下雨的末班车”**，或 **“冬日炉边”**。歌曲标签决定基础氛围，记忆里的天气和时间关键词会进一步改变灯光与雨雪。
+
+![Vibe Listening：输入“下雨的末班车”后的氛围预览](docs/images/rainy-memory.jpg)
+
+这里使用本地关键词规则，不调用 AI 模型。记忆按歌曲分别保存在当前页面内存中，切歌后再切回来仍能看到；**刷新清空，不上传，也不写入浏览器存储**。
+
+## 发现下一首
+
+- **Tonight’s Picks**：三首推荐，附上推荐理由。
+- **Radar**：沿四条发现路线探索曲目。
+- **Later**：把感兴趣的歌放进稍后播放队列，再播放或移除。
+- **Listening Notes**：用标签与短评描述听感；支持切歌、进度拖动、音量和喜欢反馈。
+
+推荐采用人工关系优先、标签重合度回退的本地逻辑。
 
 ## 快速开始
 
-要求 Node.js `>=22.13.0`。
+安装 **Node.js 22.x**，然后运行：
 
 ```bash
-npm install
+git clone https://github.com/HuJohnXuan/vibe-listening.git
+cd vibe-listening
+npm ci
 npm run dev
 ```
 
-开发服务器启动后，打开终端显示的本地地址。
+打开终端显示的本地地址。无需配置环境变量。
 
-## 功能列表（与当前代码保持同步）
-
-当前完成开发计划第 1–12 步：
-
-- 新增可转动视角的 Three.js 听歌房间，含家具、窗户、灯光、阴影与黑胶唱机；
-- 可直接点击唱机播放/暂停、点击灯和壁炉开关、点击窗户切换天气，也可用顶部按钮操作；
-- 可在房间全景和原唱机特写之间切换；不支持 WebGL 时回退到唱机视图；
-- 歌曲情绪和记忆中的天气/时间关键词会改变房间灯光与雨雪；记忆在本次会话中按歌曲隔离；
-- 已修复右侧内容重叠、Later 当前歌曲重播，并接入真实音量控制；
-- 实现、GitHub 参考和验收步骤见 [3D 听歌房间](docs/3D_ROOM.md)；
-
-- 全屏桌面播放器画布；
-- 品牌更新为 Vibe Listening，以“歌曲 × 记忆”作为核心体验；
-- 每首歌可生成基于歌曲标签的听歌背景，并允许用户写下一句记忆；
-- 用户记忆会即时加成到当前歌曲的氛围说明，不上传、不持久化；
-- 左侧黑胶播放区、右侧歌曲与发现区、底部控制区的布局边界；
-- 已确认的颜色、字体、间距、圆角、边框和阴影设计令牌；
-- 暖棕木纹、黑胶、奶油色与金属材质基线；
-- 10 首虚构 R&B 演示曲目的本地数据契约；
-- 10 首曲目均使用与歌名意象对应的纯图案封面，并包含 6 秒本地合成试听、
-  原创歌词片段和 Listening Notes；
-- 每首曲目的四类标签及四条人工推荐关系；
-- 人工关系优先、标签重合度回退的纯推荐核心；
-- 固定 3 首 Tonight’s Picks 和四路线 Radar 的整理后服务输出；
-- 默认曲目的封面、歌曲信息、歌词片段和 Listening Notes 静态展示；
-- 带封面、歌名、歌手和推荐理由的 3 条 Tonight’s Picks；
-- 点击推荐歌曲会切换并开始播放，Picks 与 Radar 中的歌曲均可加入独立的前端 Later 队列；
-- Radar 可展开和收起，并以唱片内页式面板展示四条发现路线、对应歌曲及理由；
-- Later 可展开查看有序队列，并支持从队列播放或移除歌曲；
-- 底部喜欢按钮提供玫红选中反馈，播放、队列和展开控件具备统一的悬停、按下与聚焦状态；
-- 进度条拖动点默认隐藏，在悬停或键盘聚焦时显示；
-- 本地试听音频的播放、暂停、上一首、下一首和进度拖动；
-- 播放时间与进度同步，以及播放状态驱动的轻量唱片和唱臂动效；
-- 切歌时同步更新封面、歌曲信息、歌词、Listening Notes 和发现结果；
-- Listening Notes 使用低权重正文和紧凑的奶油色、香槟金标签展示四类听感；
-- 已完成 `1440 × 900`、`1366 × 768` 和 `1024 × 768` 桌面/笔记本窗口验收；
-
-## 配置说明
-
-当前没有运行时环境变量或外部服务配置。站点的设计令牌集中定义在
-`app/globals.css` 的 `:root` 中。
-
-公开 Web 版本通过 OpenAI Sites 部署；站点绑定信息保存在
-`.openai/hosting.json`，其中不包含密钥。详细说明见
-[docs/CONFIGURATION.md](docs/CONFIGURATION.md)。
-
-## 项目结构
-
-- `app/`：页面入口、布局和全局视觉样式；
-- `src/core/`：推荐与播放器状态的纯业务逻辑；
-- `src/services/`：推荐用例协调及整理后输出；
-- `src/adapters/`：本地数据与媒体资源适配边界；
-- `src/ui/`：播放器页面和本地音频控制界面；
-- `src/types/`：后续共享类型契约边界；
-- `tests/`：页面结构和渲染验收测试；
-- `docs/`：架构与测试说明。
-
-当前曲库位于 `src/adapters/local_data/`，生成后的本地媒体资源位于
-`public/assets/`。演示曲目、歌手、专辑和歌词均为本项目虚构内容。
-
-## 测试
+生产构建与本地预览：
 
 ```bash
-npm test
+npm run build
+npm run start
 ```
 
-详细覆盖范围见 [docs/TESTING.md](docs/TESTING.md)。
-数据字段与关系见 [docs/DATA_MODEL.md](docs/DATA_MODEL.md)。
-内部调用方式见 [docs/API.md](docs/API.md)。
-未来外部服务接入边界见 [docs/FUTURE_API.md](docs/FUTURE_API.md)。
-最终任务与设计核对记录见 [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)。
+建议使用支持 WebGL 的现代桌面浏览器。当前针对 PC / 笔记本设计，尚未进行移动端重设计。
 
-## 变更日志
+## 适合拿来做什么
 
-见 [CHANGELOG.md](CHANGELOG.md)。
+体验一个有空间感的播放器，研究 Three.js 与 React 的互动连接，或以“歌曲 × 记忆”为起点探索自己的音乐产品。
 
-## Vercel deployment
+当前尚未接入真实音乐服务、完整歌曲播放或本地音乐导入。演示曲目、歌手、专辑和歌词均为虚构内容；本页图片来自项目实际运行界面。公开在线演示地址尚未确认，可按上面的步骤本地体验。
 
-Use Node.js `22.x` in Vercel. Keep the Build Command set to `npm run build` and leave Output Directory empty. The project uses the native Next.js build command for Vercel compatibility.
+## 开发与文档
+
+技术栈：**Next.js 16 · React 19 · TypeScript · Three.js**。场景几何在代码中构建，无需下载外部 3D 模型。
+
+```bash
+npm test       # 构建 Next.js 并运行 Node 测试
+npm run lint
+```
+
+| 入口 | 内容 |
+| --- | --- |
+| [3D 房间](docs/3D_ROOM.md) | 互动机制、渲染策略、参考项目和验收步骤 |
+| [架构](docs/ARCHITECTURE.md) | 页面、核心逻辑、服务与适配层 |
+| [数据模型](docs/DATA_MODEL.md) | 曲库字段与推荐关系 |
+| [测试](docs/TESTING.md) | 覆盖范围与检查方式 |
+| [未来 API](docs/FUTURE_API.md) | 外部服务的接入边界 |
+| [变更日志](CHANGELOG.md) | 已完成的迭代 |
+
+主要代码在 `src/ui/player/`（播放器与房间）、`src/core/`（状态与推荐）、`src/adapters/local_data/`（演示曲库）；样式位于 `app/globals.css`。
+
+## 一起把房间变得更好
+
+如果你也喜欢这种听歌方式，欢迎点一个 **Star**，方便下次找到这个房间。
+
+欢迎通过 [Issue](https://github.com/HuJohnXuan/vibe-listening/issues) 分享想要的房间互动、使用体验或问题，也欢迎提交 PR。较大的功能建议先描述使用场景；Bug 反馈请附浏览器、窗口尺寸和复现步骤。
+
+感谢 [Three.js](https://github.com/mrdoob/three.js) 提供渲染基础，以及 [cozy-room-3d](https://github.com/hugozap/cozy-room-3d) 带来的空间构成灵感。参考与采用范围见 [3D 房间文档](docs/3D_ROOM.md)。
