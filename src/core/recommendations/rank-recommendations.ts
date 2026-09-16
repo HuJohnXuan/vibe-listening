@@ -60,7 +60,7 @@ function selectStrongestRoute(options: {
   source: Track;
   target: Track;
 }): RecommendationRoute {
-  if (options.source.artist === options.target.artist) {
+  if (!!options.source.artist.trim() && options.source.artist !== "未知歌手" && options.source.artist === options.target.artist) {
     return "same_artist";
   }
 
@@ -89,7 +89,7 @@ function calculateOverlap(options: {
       findSharedTags({ ...options, key }).length * TAG_WEIGHTS[key],
     0,
   );
-  const artistScore = options.source.artist === options.target.artist ? 6 : 0;
+  const artistScore = !!options.source.artist.trim() && options.source.artist !== "未知歌手" && options.source.artist === options.target.artist ? 6 : 0;
 
   return {
     route: selectStrongestRoute(options),
@@ -173,6 +173,7 @@ function collectTagRecommendations(options: {
         score: overlap.score,
       };
     })
+    .filter(item => !options.currentTrack.local || item.score > 0)
     .sort(
       (left, right) =>
         right.score - left.score ||

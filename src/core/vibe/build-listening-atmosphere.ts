@@ -58,7 +58,7 @@ export function buildListeningAtmosphere({
   return {
     title: trimmedMemory ? "记忆加成后的氛围" : "这首歌的听歌氛围",
     background: getBackground(track),
-    detail: `${room.name} · ${room.weather === "rain" ? "窗外落雨，房间留一盏暖灯。" : room.weather === "snow" ? "窗外飘雪，炉火照亮木地板。" : "把灯光放低，让音乐填满房间。"}`,
+    detail: `${track.local ? "本地歌曲氛围" : room.name} · ${room.weather === "rain" ? "窗外落雨，房间留一盏暖灯。" : room.weather === "snow" ? "窗外飘雪，暖光照亮木地板。" : "把灯光放低，让音乐填满房间。"}`,
     memoryEffect: trimmedMemory
       ? `你的记忆「${trimmedMemory}」让这首歌多了一层只属于你的回声。`
       : "写下一段和它有关的记忆，让这首歌的氛围更贴近你。",

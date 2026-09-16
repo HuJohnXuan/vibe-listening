@@ -3,8 +3,14 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import type { RoomMood } from "../../core/vibe/build-listening-atmosphere.ts";
 import { isRoomClick, type RoomAction } from "../../core/vibe/room-interactions.ts";
+import { createResident } from "./create-resident.ts";
+import { createRoomVariants } from "./create-room-variants.ts";
+import type { RoomType } from "../../core/vibe/room-presets.ts";
+import { nearestResidentSpot, type ResidentCommand, type ResidentSpot } from "../../core/vibe/resident-path.ts";
 
 export interface RoomState {
+  roomType?: RoomType;
+  energy?: number;
   room: RoomMood;
   isPlaying: boolean;
   coverUrl: string;
@@ -14,11 +20,12 @@ export interface RoomState {
 
 /** A locally modelled listening room. No remote models, textures or user data. */
 export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFailure: () => void,
-  onAction: (action: RoomAction) => void, onHover: (action: RoomAction | null) => void) {
+  onAction: (action: RoomAction) => void, onHover: (action: RoomAction | null) => void,
+  onResidentStatus: (value: string) => void = () => {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.needsUpdate = true;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -34,7 +41,9 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 1.25, 0);
   controls.enablePan = false;
-  controls.enableZoom = false;
+  controls.enableZoom = true;
+  controls.minDistance = 4;
+  controls.maxDistance = 20;
   controls.minAzimuthAngle = 0.1;
   controls.maxAzimuthAngle = 1.2;
   controls.minPolarAngle = 0.55;
@@ -111,6 +120,7 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
   }
   const rod = cylinder(0.028, 0.028, 3.8, 0.65, 3.47, -2.57);
   rod.rotation.z = Math.PI / 2;
+  const cabinShell = [...scene.children];
 
   const weather = new THREE.Group();
   scene.add(weather);
@@ -122,6 +132,7 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
   }
 
   // A low fireplace beside the window, mantel and small framed print.
+  const beforeFireplace = scene.children.length;
   const stone = material("#786452");
   box(1.8, 1.48, 0.48, -2.45, 0.75, -2.6, stone);
   box(1.32, 1.02, 0.1, -2.45, 0.59, -2.32, dark);
@@ -146,6 +157,7 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
   const sun = mesh(new THREE.CircleGeometry(0.31, 40), artMat, -2.45, 2.73, -2.775);
   sun.castShadow = false;
   box(0.77, 0.06, 0.025, -2.45, 2.25, -2.76, walnut);
+  const cabinFireplace = scene.children.slice(beforeFireplace);
 
   // Upholstered sofa, cushions and draped throw. Groups give the furniture depth.
   const couch = new THREE.Group();
@@ -231,11 +243,13 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
     leaf.rotation.z = Math.cos(a) * 0.5;
     cylinder(0.008, 0.012, 0.75, x, 0.63, z, green);
   }
+  const beforeShelves = scene.children.length;
   for (const y of [2.45, 3.05]) {
     box(0.36, 0.07, 1.62, -3.72, y, 0.55, oak);
     for (let i = 0; i < 6; i++) box(0.25, 0.33 + (i % 2) * 0.08, 0.08, -3.72, y + 0.23, -0.06 + i * 0.21, sleeves[i % 5]);
   }
 
+  const wallShelves = scene.children.slice(beforeShelves);
   scene.add(new THREE.HemisphereLight("#ffe6bf", "#513a29", 2.1));
   const keyLight = new THREE.DirectionalLight("#ffddb0", 3);
   keyLight.position.set(1, 7, 5);
@@ -251,6 +265,10 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
   fireLight.position.set(-2.45, 0.7, -1.95);
   scene.add(fireLight);
 
+  const resident = createResident(onResidentStatus);
+  scene.add(resident.root);
+  const variants = createRoomVariants(scene);
+
   // Generous invisible hit volumes keep small furnishings easy to operate.
   const hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
   materials.add(hitMaterial);
@@ -259,7 +277,13 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
     { action: "lamp" as const, mesh: box(0.95, 2.75, 0.95, -2.85, 1.36, 2.12, hitMaterial) },
     { action: "fire" as const, mesh: box(2.05, 1.65, 0.8, -2.45, 0.84, -2.5, hitMaterial) },
     { action: "window" as const, mesh: box(2.8, 2.6, 0.23, 0.65, 2.2, -2.75, hitMaterial) },
+    { action: "sofa" as const, mesh: box(1.15, 1.35, 2.75, -2.55, 0.67, 0.6, hitMaterial) },
+    { action: "resident" as const, mesh: box(0.95, 2.2, 0.8, 0, 1.1, 0, hitMaterial, resident.body) },
+    { action: "records" as const, mesh: box(2.7, 0.8, 0.9, 2.32, 0.5, -1.45, hitMaterial) },
   ];
+  const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.075);
+  const floorPoint = new THREE.Vector3();
+  let floorSpot: ResidentSpot | null = null;
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   function pick(event: PointerEvent): RoomAction | null {
@@ -268,8 +292,14 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
     scene.updateMatrixWorld(true);
     camera.updateMatrixWorld(true);
     raycaster.setFromCamera(pointer, camera);
-    const hit = raycaster.intersectObjects(targets.map(target => target.mesh), false)[0];
-    return targets.find(target => target.mesh === hit?.object)?.action ?? null;
+    floorSpot = null;
+    const hit = raycaster.intersectObjects(targets.filter(target => (target.action !== "resident" || resident.root.visible) && (target.action !== "fire" || (state.roomType ?? "cabin") === "cabin")).map(target => target.mesh), false)[0];
+    if (hit) return targets.find(target => target.mesh === hit.object)!.action;
+    // Only open floor counts; furniture must not be clicked through.
+    const first = raycaster.intersectObjects(scene.children, true).find(h => h.object instanceof THREE.Mesh && h.object.visible && (() => { let parent = h.object.parent; while (parent) { if (!parent.visible) return false; parent = parent.parent; } return true; })() && (h.object.material as THREE.Material).visible);
+    if (first && first.point.y > 0.13) return null;
+    if (raycaster.ray.intersectPlane(floorPlane, floorPoint)) floorSpot = nearestResidentSpot(floorPoint.x, floorPoint.z);
+    return floorSpot ? "walk" : null;
   }
   let pressed: { x: number; y: number; id: number; action: RoomAction | null } | null = null;
   let dragged = false;
@@ -292,7 +322,13 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
     pressed = null;
     if (!start || start.id !== event.pointerId || dragged || !isRoomClick(start, { x: event.clientX, y: event.clientY })) return;
     const action = pick(event);
-    if (action && action === start.action) onAction(action);
+    if (action && action === start.action) {
+      if (action === "walk" && floorSpot) resident.command(floorSpot);
+      else if (action === "resident") resident.command("wave");
+      else if (action === "sofa" || action === "records") resident.command(action);
+      else onAction(action);
+      dirty = true;
+    }
     hover(action);
   }
   function pointerCancel() { pressed = null; hover(null); }
@@ -319,12 +355,20 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
   let visible = true;
   let enabled = true;
   function update(next: RoomState) {
+    const changedRoom = (state.roomType ?? "cabin") !== (next.roomType ?? "cabin");
     state = next;
+    const roomType = next.roomType ?? "cabin";
+    cabinShell.forEach(object=>{object.visible=roomType==="cabin";});
+    cabinFireplace.forEach(object=>{object.visible=roomType==="cabin";});
+    wallShelves.forEach(object => { object.visible = roomType === "cabin"; });
+    variants.setRoom(roomType); resident.dress(roomType);
+    sofaFabric.color.set(roomType === "cloud" ? "#cbbfa7" : roomType === "rooftop" ? "#b7a589" : "#9b5f38");
+    if (changedRoom) renderer.shadowMap.needsUpdate = true;
     dirty = true;
     lamp.intensity = next.lampOn === false ? 0 : 18;
     shadeMat.emissiveIntensity = next.lampOn === false ? 0 : 0.28;
-    flames.visible = next.fireOn !== false;
-    fireLight.intensity = next.fireOn === false ? 0 : 8;
+    flames.visible = roomType === "cabin" && next.fireOn !== false;
+    fireLight.intensity = roomType !== "cabin" || next.fireOn === false ? 0 : 8;
     targetSky.set(next.room.sky);
     targetLight.set(next.room.light);
     weather.visible = next.room.weather !== "clear";
@@ -350,6 +394,7 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
     last = timestamp;
     if (motion.matches && !dirty) return;
     time += dt;
+    resident.tick(dt, state.isPlaying, motion.matches, state.room.weather !== "clear", state.energy ?? 0.5);
     const blend = motion.matches ? 1 : 1 - Math.exp(-dt * 4);
     skyMat.color.lerp(targetSky, blend);
     windowLight.color.lerp(targetLight, blend);
@@ -359,7 +404,7 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
     if (!motion.matches) {
       if (state.isPlaying) vinyl.rotation.y -= dt * 3.49;
       flames.children.forEach((flame, i) => { flame.scale.y = 1.8 + Math.sin(time * 3 + i * 1.3) * 0.45; });
-      fireLight.intensity = state.fireOn === false ? 0 : 8 + Math.sin(time * 3) * 0.55;
+      fireLight.intensity = (state.roomType ?? "cabin") !== "cabin" || state.fireOn === false ? 0 : 8 + Math.sin(time * 3) * 0.55;
       if (weather.visible) drops.forEach((drop, i) => {
         drop.position.y -= dt * (state.room.weather === "rain" ? 1.9 : 0.35);
         if (drop.position.y < 1.03) drop.position.y = 3.32;
@@ -393,11 +438,20 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
   frame = requestAnimationFrame(draw);
   return {
     update,
+    residentCommand(value: ResidentCommand) { resident.command(value); dirty = true; },
+    showResident(value: boolean) { resident.setVisible(value); dirty = true; },
     setVisible(value: boolean) { enabled = value; dirty = true; },
     view(direction: number) {
+      controls.target.set(0, 1.25, 0);
       camera.position.copy(home).applyAxisAngle(new THREE.Vector3(0, 1, 0), direction * 0.23);
       controls.update();
       dirty = true;
+    },
+    focusResident() {
+      const target = resident.body.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 1.05, 0));
+      controls.target.copy(target);
+      camera.position.copy(target).add(new THREE.Vector3(3.4, 2.2, 5));
+      controls.update(); dirty = true;
     },
     dispose() {
       disposed = true;
@@ -414,6 +468,8 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
       canvas.removeEventListener("pointerleave", pointerLeave);
       renderer.domElement.removeEventListener("webglcontextlost", contextLost);
       textures.forEach(t => t.dispose());
+      resident.dispose();
+      variants.dispose();
       geometries.forEach(g => g.dispose());
       materials.forEach(m => m.dispose());
       renderer.dispose();

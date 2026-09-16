@@ -1455,4 +1455,51 @@ button {
 .room-interactions button:hover { color: var(--color-cream); border-color: var(--color-champagne); }
 .room-interactions button:focus-visible { outline: 2px solid var(--color-champagne); outline-offset: 3px; }
 .room-interactions .room-follow-song { background: transparent; text-decoration: underline; }
+.resident-panel { position: absolute; z-index: 3; left: 28px; right: 28px; top: 116px; padding: 10px 12px; border: 1px solid var(--border-subtle); border-radius: 12px; background: rgba(28,20,16,.85); }
+.resident-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--color-champagne); font-size: 11px; }
+.resident-panel p { margin: 5px 0 8px; font-size: 11px; color: var(--text-secondary); }
+.resident-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.resident-panel button { background: transparent; border: 1px solid var(--border-subtle); border-radius: 16px; padding: 5px 9px; color: var(--color-cream); cursor: pointer; font-size: 11px; }
+.resident-panel button:hover { border-color: var(--color-champagne); }
+.resident-panel button:focus-visible { outline: 2px solid var(--color-champagne); outline-offset: 2px; }
+.listening-room:has(.resident-panel) .room-canvas { top: 170px; bottom: 105px; }
+@media (max-width: 1100px) { .resident-panel { top: 142px; left: 16px; right: 16px; } .listening-room:has(.resident-panel) .room-canvas { top: 230px; } }
 @media (max-width: 1100px) { .room-interactions { top: 104px; left: 16px; } .room-interactions button { padding: 5px 8px; font-size: 10px; } }
+
+/* Local collection and room controls */
+.library-open { color: var(--color-champagne); background: #30241d; border: 1px solid #755a37; border-radius: 22px; padding: 9px 16px; cursor: pointer; white-space: nowrap; }
+.library-dialog { width: min(780px, calc(100vw - 40px)); max-height: 86vh; padding: 26px; border: 1px solid #715238; border-radius: 20px; background: #211a16; color: #f1e5d5; overflow: auto; margin: auto; box-shadow: 0 24px 90px #0009; }
+.library-dialog::backdrop { background: #100c0bb8; backdrop-filter: blur(7px); }
+.library-dialog header, .library-song-line { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.library-dialog h2 { font-size: 25px; margin: 6px 0; }
+.library-dialog button, .library-dialog select, .library-dialog input { font: inherit; color: inherit; background: #332820; border: 1px solid #67513f; border-radius: 8px; padding: 8px 10px; }
+.library-dialog button { cursor: pointer; }
+.library-dialog button:disabled { opacity: .5; cursor: wait; }
+.library-dialog :focus-visible, .room-selectors select:focus-visible { outline: 2px solid #e5bb76; outline-offset: 3px; }
+.library-privacy, .library-message, .library-empty { font-size: 13px; line-height: 1.8; color: #c3b09d; margin: 16px 0; }
+.import-zone { border: 1px dashed #947043; border-radius: 14px; padding: 20px; background: #30241b; }
+.import-label { display: flex; flex-direction: column; gap: 12px; font-size: 15px; }
+.import-zone small, .audio-analysis small { display: block; font-size: 11px; line-height: 1.7; margin-top: 10px; color: #bba58c; }
+.import-label input { max-width: 100%; }
+.library-song { padding: 16px 0; border-top: 1px solid #483729; }
+.library-song-line img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
+.library-song-copy { flex: 1; min-width: 0; }
+.library-song-copy strong, .library-song-copy small { display: block; overflow-wrap: anywhere; }
+.library-song-copy small { color: #bba58c; font-size: 12px; margin-top: 5px; }
+.library-row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.library-row-actions button { font-size: 12px; }
+.song-editor, .remove-confirm { margin-top: 14px; padding: 16px; border-radius: 12px; background: #191411; }
+.song-editor h3 { margin: 0 0 14px; }
+.editor-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.editor-fields label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #c5af98; }
+.editor-fields input, .editor-fields select { width: 100%; min-width: 0; }
+.audio-analysis { margin: 18px 0; font-size: 12px; }
+.import-results { font-size: 12px; margin-bottom: 18px; line-height: 1.8; }
+.room-selectors { position: absolute; z-index: 3; top: 67px; left: 28px; display: flex; gap: 16px; }
+.room-selectors label { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text-secondary); }
+.room-selectors select { background: #2b211b; color: var(--color-cream); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 6px; font-size: 11px; }
+.room-interactions { top: 108px; }
+.resident-panel { top: 149px; }
+.listening-room:has(.resident-panel) .room-canvas { top: 242px; bottom: 90px; }
+@media (max-width: 1100px) { .room-selectors { top: 104px; left: 16px; } .room-interactions { top: 145px; } .resident-panel { top: 182px; } .listening-room:has(.resident-panel) .room-canvas { top: 278px; } }
+@media (max-width: 600px) { .library-dialog { padding: 18px; } .library-song-line { flex-wrap: wrap; } .editor-fields { grid-template-columns: 1fr; } }

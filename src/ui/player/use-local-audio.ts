@@ -33,7 +33,8 @@ export interface LocalAudioController {
 export function useLocalAudio(playlist: readonly Track[]) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const resumeAfterChangeRef = useRef(false);
-  const [trackIndex, setTrackIndex] = useState(0);
+  const [selectedId, setSelectedId] = useState(playlist[0].id);
+  const trackIndex = Math.max(0, getTrackIndexById(playlist, selectedId));
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -48,7 +49,7 @@ export function useLocalAudio(playlist: readonly Track[]) {
     setElapsedSeconds(0);
     setDurationSeconds(0);
     setPlaybackError("");
-    if (resumeAfterChangeRef.current) {
+    if (resumeAfterChangeRef.current && playlist.some(track => track.id === selectedId)) {
       const source = audio.src;
       void audio.play().catch((error: unknown) => {
         if (audio.src === source && !(error instanceof DOMException && error.name === "AbortError")) {
@@ -56,6 +57,8 @@ export function useLocalAudio(playlist: readonly Track[]) {
         }
       });
     }
+  // Catalog edits must not reload or restart the current audio file.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioTrack.previewAudioUrl]);
 
   function startPlayback() {
@@ -78,7 +81,7 @@ export function useLocalAudio(playlist: readonly Track[]) {
 
   function selectTrack(nextIndex: number) {
     resumeAfterChangeRef.current = isPlaying;
-    setTrackIndex(nextIndex);
+    setSelectedId(playlist[nextIndex].id);
   }
 
   function playTrack(trackId: string) {
@@ -89,7 +92,7 @@ export function useLocalAudio(playlist: readonly Track[]) {
       return;
     }
     resumeAfterChangeRef.current = true;
-    setTrackIndex(nextIndex);
+    setSelectedId(playlist[nextIndex].id);
   }
 
   function seek(nextSeconds: number) {

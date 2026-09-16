@@ -6,6 +6,9 @@ import { formatPlaybackTime } from "../../core/player/player-state.ts";
 import { buildListeningAtmosphere } from "../../core/vibe/build-listening-atmosphere.ts";
 import type { ListeningAtmosphere as Atmosphere } from "../../core/vibe/build-listening-atmosphere.ts";
 import { ListeningRoom } from "./listening-room.tsx";
+import { useMusicLibrary } from "./use-music-library.ts";
+import { MusicLibrary } from "./music-library.tsx";
+import { suggestedRoom } from "../../core/vibe/room-presets.ts";
 import type {
   RadarRecommendations,
   RecommendedTrack,
@@ -43,7 +46,7 @@ function TurntableRegion(
   return (
     <section className="turntable-region" data-region="turntable" aria-label="黑胶播放区域">
       <span className="turntable-signature">Vibe Listening</span>
-      <ListeningRoom state={{ room: atmosphere.room, isPlaying, coverUrl: track.coverUrl }} onTogglePlayback={onTogglePlayback}>
+      <ListeningRoom state={{ room: atmosphere.room, isPlaying, coverUrl: track.coverUrl, roomType: suggestedRoom(track), energy: /活力|Funk|Dance|Energetic/i.test([...track.tags.moods, ...track.tags.genres].join(" ")) ? 0.85 : 0.25 }} onTogglePlayback={onTogglePlayback}>
       <div className="turntable-plinth">
         <div className={`record${isPlaying ? " is-playing" : ""}`} aria-hidden="true">
           <div className="record-label"><img src={track.coverUrl} alt="" /><i /></div>
@@ -67,7 +70,8 @@ function CurrentTrack({ track }: { track: Track }) {
       <span className="eyebrow">NOW PLAYING</span>
       <h1>{track.title}</h1>
       <p className="track-meta">{track.artist} <i /> {track.album}</p>
-      <blockquote>“{track.lyricsExcerpt}”</blockquote>
+      {track.lyricsExcerpt && <blockquote>“{track.lyricsExcerpt}”</blockquote>}
+      {track.local && <small className="local-track-label">本地音乐 · 完整播放</small>}
     </header>
   );
 }
@@ -184,6 +188,7 @@ function TonightsPicks({
     <section className="tonights-picks" data-section="tonights-picks">
       <div className="section-heading"><h2>Tonight’s Picks</h2><span>FOR THIS ROOM</span></div>
       <div className="recommendation-list">
+        {picks.length === 0 && <p className="library-empty">暂时没有足够的相似标签。可以在“我的音乐”补充曲风与情绪，或直接从曲库选歌。</p>}
         {picks.map((recommendation) => (
           <RecommendationRow
             recommendation={recommendation}
@@ -442,8 +447,9 @@ function TransportControls({ player }: { player: LocalAudioController }) {
 }
 
 export function PlayerPage({ playlist, recommendations }: PlayerPageProps) {
+  const library = useMusicLibrary(playlist);
   const { audioRef, player, later, displayTrack, discovery } =
-    usePlayerView(playlist, recommendations);
+    usePlayerView(library.playlist, recommendations);
   const [memories, setMemories] = useState<Record<string, string>>({});
   const memory = memories[displayTrack.id] ?? "";
   const setMemory = (value: string) => setMemories(current => ({ ...current, [displayTrack.id]: value }));
@@ -464,7 +470,7 @@ export function PlayerPage({ playlist, recommendations }: PlayerPageProps) {
         onError={player.markError}
       />
       <div className="ambient-light" aria-hidden="true" />
-      <header className="room-header"><span>VL</span><i /><span>SONG × MEMORY LISTENING</span></header>
+      <header className="room-header"><span>VL</span><i /><span>SONG × MEMORY LISTENING</span><MusicLibrary library={library} onPlay={player.playTrack} onRemove={async id => { if (displayTrack.id === id) audioRef.current?.pause(); if (await library.remove(id)) later.removeTrack(id); }} /></header>
       <div className="stage-grid">
         <TurntableRegion track={displayTrack} isPlaying={player.isPlaying} atmosphere={atmosphere} onTogglePlayback={player.togglePlayback} />
         <ListeningRegion

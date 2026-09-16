@@ -6,6 +6,8 @@ export interface TrackTags {
 }
 
 export interface Track {
+  readonly preferredRoom?: "cabin" | "rooftop" | "cloud";
+  readonly local?: boolean;
   readonly id: string;
   readonly title: string;
   readonly artist: string;
