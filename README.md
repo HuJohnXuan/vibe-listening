@@ -10,13 +10,17 @@
 
 无需注册，也无需 API Key。建议用电脑浏览器打开，导入一首喜欢的歌开始体验。
 
-![Vibe Listening 早期版本的温暖客厅与播放器界面](docs/images/listening-room.jpg)
+![Vibe Listening 当前线上版本：温暖客厅、听歌住客与完整播放器](docs/images/room-cabin.jpg)
 
-*早期实机截图，展示客厅与播放器布局。当前版本已加入三种空间、互动住客和本地曲库，可在在线版体验。*
+*以下图片均来自当前线上版本的实际运行界面。点击图片可查看大图。*
 
 ## 一个可以参与的听歌空间
 
 ### 三种房间，三种停留的方式
+
+| 温暖客厅 | 城市天台 | 云端小屋 |
+| :---: | :---: | :---: |
+| [![温暖客厅全景：壁炉、沙发与苔绿穿搭的住客](docs/images/space-cabin.jpg)](docs/images/space-cabin.jpg) | [![城市天台全景：城市远景与蓝灰穿搭的住客](docs/images/space-rooftop.jpg)](docs/images/space-rooftop.jpg) | [![云端小屋全景：云朵、拱架与米白穿搭的住客](docs/images/space-cloud.jpg)](docs/images/space-cloud.jpg) |
 
 | 空间 | 听歌时的风景 | 住客穿搭 |
 | --- | --- | --- |
@@ -29,6 +33,10 @@
 拖动视角、滚轮缩放，靠近看看唱片；点击唱机播放或暂停，点击落地灯切换明暗，在客厅点燃壁炉，或点击窗户让天气在晴、雨、雪之间变化。常用操作也提供可通过键盘访问的按钮。
 
 ### 房间里，有一个陪你听歌的人
+
+| 客厅 · 苔绿上衣 | 天台 · 蓝灰夹克 | 云端 · 米白上衣 |
+| :---: | :---: | :---: |
+| [![客厅住客近景：短发、棕色耳机、苔绿上衣与棕色长裤](docs/images/resident-cabin.jpg)](docs/images/resident-cabin.jpg) | [![天台住客近景：蓝灰夹克、深色长裤与浅色鞋](docs/images/resident-rooftop.jpg)](docs/images/resident-rooftop.jpg) | [![云端住客近景：米白上衣与灰蓝长裤](docs/images/resident-cloud.jpg)](docs/images/resident-cloud.jpg) |
 
 住客戴着耳机，保留简单的眼睛和安静的表情。他会偶尔换个地方待着，播放时轻轻晃动，并随房间更换衣服。
 
