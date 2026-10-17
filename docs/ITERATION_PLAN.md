@@ -49,7 +49,7 @@
 - [房间、住客与曲库现状](RESIDENT_PREVIEW.md)：当前操作和限制。
 - [架构](ARCHITECTURE.md)、[数据模型](DATA_MODEL.md)、[测试](TESTING.md)：实现时结合代码更新。
 
-**历史冲突处理**：`openspec/changes/add-anonymous-user-data-backend/` 曾提出 FastAPI 与匿名设备状态服务，与本次“本地保存、暂不需要后台”的边界不同。它不是当前实现指令；不删除或擅自修改该历史方案。只有用户重新明确提出跨设备或后台需求时，才重新评估。
+**后端方向已重新开启评估**：用户于 2026-10-17 明确提出需要研究后台数据与完整产品形态。历史中的 `openspec/changes/add-anonymous-user-data-backend/` 仍不是直接实施指令；新的调研结论、参考项目与分阶段迁移建议见 [后端产品分析](BACKEND_PRODUCT_ANALYSIS.md)。在用户确认产品边界前，现有本地优先实现继续有效。
 
 ## 3. 分阶段范围
 

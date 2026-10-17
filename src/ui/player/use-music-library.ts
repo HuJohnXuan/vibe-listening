@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { addSong, asTrack, libraryError, readSongs, removeSong, saveSong, type SavedSong } from "../../adapters/local_data/music-library.ts";
+import { asTrack, libraryError, localMusicLibraryRepository, type MusicLibraryRepository, type SavedSong } from "../../adapters/local_data/music-library.ts";
 import type { Track } from "../../types/track.ts";
 
-export function useMusicLibrary(demos: readonly Track[]) {
+export function useMusicLibrary(demos: readonly Track[], repository: MusicLibraryRepository = localMusicLibraryRepository) {
   const [songs, setSongs] = useState<SavedSong[]>([]);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -14,11 +14,11 @@ export function useMusicLibrary(demos: readonly Track[]) {
   const [tracks, setTracks] = useState<Track[]>([]);
   useEffect(() => {
     let active = true;
-    readSongs().then(value => { if (active) { setSongs(value.sort((a,b) => a.addedAt - b.addedAt)); setReady(true); } })
+    repository.readSongs().then(value => { if (active) { setSongs(value.sort((a,b) => a.addedAt - b.addedAt)); setReady(true); } })
       .catch(error => { if (active) setMessage(`无法读取本地曲库：${libraryError(error)}`); });
     const cache = urls.current;
     return () => { active = false; cache.forEach(value => { URL.revokeObjectURL(value.audio); if (value.cover.startsWith("blob:")) URL.revokeObjectURL(value.cover); }); cache.clear(); };
-  }, []);
+  }, [repository]);
   useEffect(() => {
     const ids = new Set(songs.map(song => song.id));
     urls.current.forEach((value, id) => { if (!ids.has(id)) { URL.revokeObjectURL(value.audio); if (value.cover.startsWith("blob:")) URL.revokeObjectURL(value.cover); urls.current.delete(id); } });
@@ -51,7 +51,7 @@ export function useMusicLibrary(demos: readonly Track[]) {
             duration: metadata.format.duration ?? 0, file, fileName: file.name,
             cover: picture ? new Blob([new Uint8Array(picture.data)], {type: picture.format}) : undefined,
             genre: metadata.common.genre?.[0]?.slice(0,100) || "", mood: "", addedAt: Date.now() };
-          await addSong(song); known.add(id); setSongs(current => [...current, song]);
+          await repository.addSong(song); known.add(id); setSongs(current => [...current, song]);
           messages.push(`${file.name}：已导入${metadata.common.title ? "" : "，歌名使用文件名"}。`);
         } catch (error) { messages.push(`${file.name}：${libraryError(error)}`); }
         setResults([...messages]);
@@ -61,11 +61,11 @@ export function useMusicLibrary(demos: readonly Track[]) {
     finally { setBusy(false); locked.current = false; }
   }
   async function update(song: SavedSong) {
-    try { await saveSong(song); setSongs(current => current.map(old => old.id === song.id ? song : old)); setMessage("资料已保存到本地。"); return true; }
+    try { await repository.saveSong(song); setSongs(current => current.map(old => old.id === song.id ? song : old)); setMessage("资料已保存到本地。"); return true; }
     catch (error) { setMessage(libraryError(error)); return false; }
   }
   async function remove(id: string) {
-    try { await removeSong(id); setSongs(current => current.filter(song => song.id !== id)); setMessage("已移除曲库副本，设备原文件不受影响。"); return true; }
+    try { await repository.removeSong(id); setSongs(current => current.filter(song => song.id !== id)); setMessage("已移除曲库副本，设备原文件不受影响。"); return true; }
     catch (error) { setMessage(libraryError(error)); return false; }
   }
   const playlist = useMemo(() => [...demos, ...tracks], [demos, tracks]);

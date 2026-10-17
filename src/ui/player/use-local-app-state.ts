@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { libraryError, readAppState, saveAppState } from "../../adapters/local_data/music-library.ts";
+import { libraryError, localAppStateRepository, type LocalAppStateRepository } from "../../adapters/local_data/music-library.ts";
 import { DEFAULT_LOCAL_APP_STATE, type AmbientMix, type ListeningScene, type LocalAppState, type PlayerState, type Playlist, type RoomPreferences } from "../../types/local-state.ts";
 
-export function useLocalAppState() {
+export function useLocalAppState(repository: LocalAppStateRepository = localAppStateRepository) {
   const [state, setState] = useState<LocalAppState>(DEFAULT_LOCAL_APP_STATE);
   const [ready, setReady] = useState(false);
   const [message, setMessage] = useState("");
@@ -12,19 +12,19 @@ export function useLocalAppState() {
   useEffect(() => { latest.current = state; }, [state]);
   useEffect(() => {
     let active = true;
-    readAppState().then(value => { if (active) { latest.current = value; setState(value); setReady(true); } })
+    repository.readAppState().then(value => { if (active) { latest.current = value; setState(value); setReady(true); } })
       .catch(error => { if (active) { setMessage(`无法读取播放器状态：${libraryError(error)}`); setReady(true); } });
     return () => { active = false; };
-  }, []);
+  }, [repository]);
 
   const update = useCallback((change: (current: LocalAppState) => LocalAppState, successMessage = "") => {
     setState(current => {
       const next = change(current); latest.current = next;
-      void saveAppState(next).then(() => { if (successMessage) setMessage(successMessage); })
+      void repository.saveAppState(next).then(() => { if (successMessage) setMessage(successMessage); })
         .catch(error => setMessage(`未能保存到本地：${libraryError(error)}`));
       return next;
     });
-  }, []);
+  }, [repository]);
 
   const savePlayer = useCallback((player: PlayerState) => update(current => ({ ...current, player })), [update]);
   const toggleFavorite = (trackId: string) => update(current => ({ ...current, favoriteTrackIds: current.favoriteTrackIds.includes(trackId) ? current.favoriteTrackIds.filter(id => id !== trackId) : [...current.favoriteTrackIds, trackId] }));

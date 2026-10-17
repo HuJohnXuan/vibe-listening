@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import 'fake-indexeddb/auto';
-import { addSong, readSongs, saveSong, removeSong, asTrack, libraryError, readAppState, saveAppState } from '../src/adapters/local_data/music-library.ts';
+import { addSong, readSongs, saveSong, removeSong, asTrack, libraryError, localAppStateRepository, localMusicLibraryRepository, readAppState, saveAppState } from '../src/adapters/local_data/music-library.ts';
 import { estimateAudioFeatures } from '../src/core/vibe/audio-features.ts';
 import { suggestedRoom } from '../src/core/vibe/room-presets.ts';
 import { rankRecommendations } from '../src/core/recommendations/rank-recommendations.ts';
@@ -51,6 +51,17 @@ test('local library persists actual audio across connections, rejects duplicates
   assert.deepEqual(await readSongs(),[]);
   assert.ok(file.size>0);
   assert.match(libraryError(new DOMException('full','QuotaExceededError')),/空间不足/);
+});
+test('local repository contracts keep library and player state behavior', async()=>{
+  const song={id:'repository-song',title:'Repository',artist:'',album:'',duration:12,file:fixture(),fileName:'repository.wav',genre:'',mood:'',addedAt:2};
+  await localMusicLibraryRepository.addSong(song);
+  assert.deepEqual((await localMusicLibraryRepository.readSongs()).map(value=>value.id),['repository-song']);
+  await localMusicLibraryRepository.saveSong({...song,title:'Repository Updated'});
+  assert.equal((await localMusicLibraryRepository.readSongs())[0].title,'Repository Updated');
+  const state=await localAppStateRepository.readAppState();
+  await localAppStateRepository.saveAppState({...state,favoriteTrackIds:['repository-song']});
+  assert.deepEqual((await localAppStateRepository.readAppState()).favoriteTrackIds,['repository-song']);
+  await localMusicLibraryRepository.removeSong(song.id);
 });
 test('embedded WAV metadata and full duration parse without external services',async()=>{
   const metadata=await parseBlob(fixture(),{duration:true});

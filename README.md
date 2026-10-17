@@ -135,6 +135,7 @@ npm run lint   # 检查代码规范
 | [测试](docs/TESTING.md) | 测试覆盖与检查方式 |
 | [V0.2 验收记录](docs/ITERATION_ACCEPTANCE_2026-10-17.md) | 阶段 A/B 的自动检查、浏览器证据与数据边界 |
 | [迭代基线](docs/ITERATION_PLAN.md) | 已实现范围、设计基线与阶段 C 候选 |
+| [后端产品分析](docs/BACKEND_PRODUCT_ANALYSIS.md) | 高星开源参考、后台数据模型与渐进迁移路线 |
 | [未来 API](docs/FUTURE_API.md) | 外部服务接入设想 |
 | [变更日志](CHANGELOG.md) | 已完成的迭代 |
 

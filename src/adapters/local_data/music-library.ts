@@ -7,6 +7,16 @@ export interface SavedSong {
   file: Blob; fileName: string; cover?: Blob; genre: string; mood: string;
   preferredRoom?: Track["preferredRoom"]; features?: AudioFeatures; addedAt: number;
 }
+export interface MusicLibraryRepository {
+  readSongs(): Promise<SavedSong[]>;
+  addSong(song: SavedSong): Promise<void>;
+  saveSong(song: SavedSong): Promise<void>;
+  removeSong(id: string): Promise<void>;
+}
+export interface LocalAppStateRepository {
+  readAppState(): Promise<LocalAppState>;
+  saveAppState(state: LocalAppState): Promise<void>;
+}
 const DB_NAME = "vibe-listening-music";
 const DB_VERSION = 2;
 const SONGS_STORE = "songs";
@@ -44,6 +54,17 @@ export async function readAppState(): Promise<LocalAppState> {
 }
 export const saveAppState = (state: LocalAppState) =>
   operation<IDBValidKey>(STATE_STORE, "readwrite", store => store.put(state, STATE_KEY));
+
+export const localMusicLibraryRepository: MusicLibraryRepository = {
+  readSongs,
+  async addSong(song) { await addSong(song); },
+  async saveSong(song) { await saveSong(song); },
+  async removeSong(id) { await removeSong(id); },
+};
+export const localAppStateRepository: LocalAppStateRepository = {
+  readAppState,
+  async saveAppState(state) { await saveAppState(state); },
+};
 
 export function asTrack(song: SavedSong, audioUrl: string, coverUrl: string): Track {
   return { id: song.id, title: song.title, artist: song.artist || "未知歌手", album: song.album || "本地音乐",
