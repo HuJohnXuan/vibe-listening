@@ -121,6 +121,12 @@ export function createRoomVariants(scene: THREE.Scene) {
   rooftop.visible=false; cloud.visible=false;
   return {
     setRoom(type:RoomType) {rooftop.visible=type==="rooftop";cloud.visible=type==="cloud";},
+    setAtmosphere(skyColor:string,intensity:number) {
+      const base=new THREE.Color(skyColor);
+      sky.color.copy(base); haze.color.copy(base).lerp(new THREE.Color("#b48788"),.28);
+      distant.color.copy(base).multiplyScalar(.7); middle.color.copy(base).multiplyScalar(.5); near.color.copy(base).multiplyScalar(.34);
+      windowGlow.color.set(intensity<1?"#e5bd83":"#d8c6a9"); dimGlow.color.copy(base).lerp(new THREE.Color("#afb4c0"),.42);
+    },
     dispose() {geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());scene.remove(rooftop,cloud);},
   };
 }

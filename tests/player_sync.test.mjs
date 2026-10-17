@@ -37,23 +37,19 @@ test("testUsesPlayingAudioTrackAsSingleCurrentTrackSource", () => {
   assert.match(pageSource, /radar=\{discovery\.radar\}/);
 });
 
-test("testRoutesRecommendationPlaybackAndLaterActionsThroughControllers", () => {
-  const viewSource = readFileSync(playerViewPath, "utf8");
+test("testRoutesRecommendationPlaybackAndQueueActionsThroughOneController", () => {
   const pageSource = readFileSync(playerPagePath, "utf8");
 
-  assert.match(viewSource, /const later = useLaterQueue\(playlist\)/);
   assert.match(pageSource, /onPlayTrack=\{player\.playTrack\}/);
-  assert.match(pageSource, /onAddToLater=\{later\.addTrack\}/);
-  assert.match(pageSource, /isInLater=\{later\.hasTrack\}/);
+  assert.match(pageSource, /onAddToLater=\{player\.addToQueue\}/);
+  assert.match(pageSource, /isInLater=\{player\.hasInQueue\}/);
 });
 
-test("testProvidesResolvedLaterTracksForPlayAndRemoveActions", () => {
-  const viewSource = readFileSync(playerViewPath, "utf8");
+test("testProvidesResolvedQueueTracksForPlayAndRemoveActions", () => {
   const pageSource = readFileSync(playerPagePath, "utf8");
 
-  assert.match(viewSource, /const later = useLaterQueue\(playlist\)/);
-  assert.match(pageSource, /tracks=\{later\.tracks\}/);
-  assert.match(pageSource, /onRemoveTrack=\{later\.removeTrack\}/);
+  assert.match(pageSource, /tracks=\{player\.queueTracks\}/);
+  assert.match(pageSource, /onRemoveTrack=\{player\.removeFromQueue\}/);
   assert.match(pageSource, /onPlayTrack=\{player\.playTrack\}/);
 });
 

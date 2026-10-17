@@ -1,13 +1,17 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatPlaybackTime } from "../../core/player/player-state.ts";
 import { buildListeningAtmosphere } from "../../core/vibe/build-listening-atmosphere.ts";
 import type { ListeningAtmosphere as Atmosphere } from "../../core/vibe/build-listening-atmosphere.ts";
 import { ListeningRoom } from "./listening-room.tsx";
 import { useMusicLibrary } from "./use-music-library.ts";
 import { MusicLibrary } from "./music-library.tsx";
+import { useLocalAppState } from "./use-local-app-state.ts";
+import { ListeningScenes } from "./listening-scenes.tsx";
+import { useAmbientAudio } from "./use-ambient-audio.ts";
+import type { RoomPreferences } from "../../types/local-state.ts";
 import { suggestedRoom } from "../../core/vibe/room-presets.ts";
 import type {
   RadarRecommendations,
@@ -17,7 +21,6 @@ import type { Recommendation } from "../../types/recommendation.ts";
 import type { Track } from "../../types/track.ts";
 import {
   usePlayerView,
-  type LaterQueueController,
   type LocalAudioController,
 } from "./use-player-view.ts";
 
@@ -41,12 +44,12 @@ interface PlayerPageProps {
 }
 
 function TurntableRegion(
-  { track, isPlaying, atmosphere, onTogglePlayback }: { track: Track; isPlaying: boolean; atmosphere: Atmosphere; onTogglePlayback: () => void },
+  { track, isPlaying, atmosphere, onTogglePlayback, roomPreferences, onRoomPreferencesChange }: { track: Track; isPlaying: boolean; atmosphere: Atmosphere; onTogglePlayback: () => void; roomPreferences: RoomPreferences; onRoomPreferencesChange: (value: RoomPreferences) => void },
 ) {
   return (
     <section className="turntable-region" data-region="turntable" aria-label="黑胶播放区域">
       <span className="turntable-signature">Vibe Listening</span>
-      <ListeningRoom state={{ room: atmosphere.room, isPlaying, coverUrl: track.coverUrl, roomType: suggestedRoom(track), energy: /活力|Funk|Dance|Energetic/i.test([...track.tags.moods, ...track.tags.genres].join(" ")) ? 0.85 : 0.25 }} onTogglePlayback={onTogglePlayback}>
+      <ListeningRoom state={{ room: atmosphere.room, isPlaying, coverUrl: track.coverUrl, roomType: suggestedRoom(track), energy: /活力|Funk|Dance|Energetic/i.test([...track.tags.moods, ...track.tags.genres].join(" ")) ? 0.85 : 0.25 }} onTogglePlayback={onTogglePlayback} preferences={roomPreferences} onPreferencesChange={onRoomPreferencesChange}>
       <div className="turntable-plinth">
         <div className={`record${isPlaying ? " is-playing" : ""}`} aria-hidden="true">
           <div className="record-label"><img src={track.coverUrl} alt="" /><i /></div>
@@ -276,12 +279,18 @@ function RadarDisclosure({
 
 function LaterQueueRow({
   track,
+  index,
+  count,
   onPlayTrack,
   onRemoveTrack,
+  onMove,
 }: {
   track: Track;
+  index: number;
+  count: number;
   onPlayTrack: (trackId: string) => void;
   onRemoveTrack: (trackId: string) => void;
+  onMove: (from: number, to: number) => void;
 }) {
   return (
     <article className="later-row" data-later-row="true">
@@ -290,6 +299,8 @@ function LaterQueueRow({
         <img src={track.coverUrl} alt="" />
         <span><strong>{track.title}</strong><small>{track.artist}</small></span>
       </button>
+      <button className="later-remove" type="button" aria-label={`上移 ${track.title}`} disabled={index === 0} onClick={() => onMove(index, index - 1)}>↑</button>
+      <button className="later-remove" type="button" aria-label={`下移 ${track.title}`} disabled={index === count - 1} onClick={() => onMove(index, index + 1)}>↓</button>
       <button className="later-remove" type="button" data-later-remove="true"
         aria-label={`从 Later 移除 ${track.title}`} onClick={() => onRemoveTrack(track.id)}>
         ×
@@ -300,10 +311,12 @@ function LaterQueueRow({
 
 function LaterDisclosure({
   tracks,
+  player,
   onPlayTrack,
   onRemoveTrack,
 }: {
   tracks: readonly Track[];
+  player: LocalAudioController;
   onPlayTrack: (trackId: string) => void;
   onRemoveTrack: (trackId: string) => void;
 }) {
@@ -314,12 +327,13 @@ function LaterDisclosure({
         <span className="later-open-copy">CLOSE ×</span>
       </summary>
       <div className="later-panel">
-        <header><span>YOUR LISTENING QUEUE</span><h2>Later</h2></header>
+        <header><span>YOUR LISTENING QUEUE</span><h2>播放队列</h2></header>
+        <label className="queue-mode">播放模式<select aria-label="播放模式" value={player.mode} onChange={event => player.setMode(event.target.value as LocalAudioController["mode"])}><option value="sequence">顺序播放</option><option value="shuffle">随机播放</option><option value="repeat-all">列表循环</option><option value="repeat-one">单曲循环</option></select></label>
         {tracks.length === 0 ? <p className="later-empty">还没有加入歌曲</p> : (
           <div className="later-list">
-            {tracks.map((track) => (
+            {tracks.map((track, index) => (
               <LaterQueueRow track={track} onPlayTrack={onPlayTrack}
-                onRemoveTrack={onRemoveTrack} key={track.id} />
+                onRemoveTrack={onRemoveTrack} index={index} count={tracks.length} onMove={player.moveInQueue} key={track.id} />
             ))}
           </div>
         )}
@@ -334,14 +348,12 @@ function ListeningRegion(
     picks,
     radar,
     player,
-    later,
     memory, setMemory, atmosphere,
   }: {
     track: Track;
     picks: readonly RecommendedTrack[];
     radar: RadarRecommendations;
     player: LocalAudioController;
-    later: LaterQueueController;
     memory: string;
     setMemory: (value: string) => void;
     atmosphere: Atmosphere;
@@ -353,22 +365,22 @@ function ListeningRegion(
       <ListeningAtmosphere track={track} memory={memory} setMemory={setMemory} atmosphere={atmosphere} />
       <ListeningNotes track={track} />
       <div className="discovery-tools">
-        <RadarDisclosure radar={radar} onAddToLater={later.addTrack}
-          isInLater={later.hasTrack} />
-        <LaterDisclosure tracks={later.tracks} onPlayTrack={player.playTrack}
-          onRemoveTrack={later.removeTrack} />
+        <RadarDisclosure radar={radar} onAddToLater={player.addToQueue}
+          isInLater={player.hasInQueue} />
+        <LaterDisclosure tracks={player.queueTracks} player={player} onPlayTrack={player.playTrack}
+          onRemoveTrack={player.removeFromQueue} />
       </div>
       <TonightsPicks
         picks={picks}
         onPlayTrack={player.playTrack}
-        onAddToLater={later.addTrack}
-        isInLater={later.hasTrack}
+        onAddToLater={player.addToQueue}
+        isInLater={player.hasInQueue}
       />
     </section>
   );
 }
 
-function PlayerControls({ player }: { player: LocalAudioController }) {
+function PlayerControls({ player, isFavorite, onToggleFavorite }: { player: LocalAudioController; isFavorite: boolean; onToggleFavorite: () => void }) {
   const maximum = player.durationSeconds || 0;
   const progressPercent = maximum > 0
     ? Math.min(100, (player.elapsedSeconds / maximum) * 100)
@@ -392,40 +404,29 @@ function PlayerControls({ player }: { player: LocalAudioController }) {
         />
         <span>{formatPlaybackTime(player.durationSeconds)}</span>
       </div>
-      <TransportControls player={player} />
+      <TransportControls player={player} isFavorite={isFavorite} onToggleFavorite={onToggleFavorite} />
       {player.playbackError && <p className="playback-error" role="status">{player.playbackError}</p>}
     </footer>
   );
 }
 
-function FavoriteControl({ trackId }: { trackId: string }) {
-  const [favoriteTrackIds, setFavoriteTrackIds] =
-    useState<ReadonlySet<string>>(() => new Set());
-  const isFavorite = favoriteTrackIds.has(trackId);
+function FavoriteControl({ isFavorite, onToggle }: { isFavorite: boolean; onToggle: () => void }) {
   const label = isFavorite ? "取消喜欢当前歌曲" : "喜欢当前歌曲";
-  const toggleFavorite = () => {
-    setFavoriteTrackIds((currentIds) => {
-      const nextIds = new Set(currentIds);
-      if (nextIds.has(trackId)) nextIds.delete(trackId);
-      else nextIds.add(trackId);
-      return nextIds;
-    });
-  };
   return (
     <button className="favorite-control" type="button" data-player-favorite="true"
       aria-label={label} title={label} aria-pressed={isFavorite}
-      onClick={toggleFavorite}>
+      onClick={onToggle}>
       <span aria-hidden="true">{isFavorite ? "♥" : "♡"}</span>
     </button>
   );
 }
 
-function TransportControls({ player }: { player: LocalAudioController }) {
+function TransportControls({ player, isFavorite, onToggleFavorite }: { player: LocalAudioController; isFavorite: boolean; onToggleFavorite: () => void }) {
   const playLabel = player.isPlaying ? "暂停" : "播放";
   return (
     <div className="control-row">
       <div className="control-tools">
-        <FavoriteControl trackId={player.audioTrack.id} />
+        <FavoriteControl isFavorite={isFavorite} onToggle={onToggleFavorite} />
       </div>
       <div className="transport-controls">
         <button type="button" aria-label="上一首" title="上一首" onClick={player.playPrevious}>
@@ -448,12 +449,25 @@ function TransportControls({ player }: { player: LocalAudioController }) {
 
 export function PlayerPage({ playlist, recommendations }: PlayerPageProps) {
   const library = useMusicLibrary(playlist);
-  const { audioRef, player, later, displayTrack, discovery } =
-    usePlayerView(library.playlist, recommendations);
+  const app = useLocalAppState();
+  const { audioRef, player, displayTrack, discovery } =
+    usePlayerView(library.playlist, recommendations, app.state.player, app.ready && library.ready);
+  const saveCheckpoint = Math.floor(player.elapsedSeconds / 5);
+  useEffect(() => { if (app.ready && library.ready) app.sanitizeTrackReferences(library.playlist.map(track => track.id));
+  // The local catalog has finished resolving; stale relationships can now be removed safely.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [app.ready, library.ready, library.playlist.map(track => track.id).join("|")]);
+  useEffect(() => { if (app.ready && library.ready) app.savePlayer(player.snapshot());
+  // Persist queue/mode immediately and progress at a five-second checkpoint.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [app.ready, library.ready, player.queue, player.volume, saveCheckpoint]);
   const [memories, setMemories] = useState<Record<string, string>>({});
   const memory = memories[displayTrack.id] ?? "";
   const setMemory = (value: string) => setMemories(current => ({ ...current, [displayTrack.id]: value }));
   const atmosphere = buildListeningAtmosphere({ track: displayTrack, memory });
+  const activeRoom = app.state.room.roomType === "auto" ? suggestedRoom(displayTrack) : app.state.room.roomType;
+  const ambient = useAmbientAudio(app.state.ambient, activeRoom, app.setAmbient);
+  function playPlaylist(ids: readonly string[]) { const first = ids.find(id => library.playlist.some(track => track.id === id)); if (first) player.playTrack(first, ids); }
   return (
     <main className="room-shell">
       <audio
@@ -466,23 +480,23 @@ export function PlayerPage({ playlist, recommendations }: PlayerPageProps) {
         onTimeUpdate={player.syncElapsed}
         onPlay={player.markPlaying}
         onPause={player.markPaused}
-        onEnded={player.markPaused}
-        onError={player.markError}
+        onEnded={player.handleEnded}
+        onError={player.handleError}
       />
       <div className="ambient-light" aria-hidden="true" />
-      <header className="room-header"><span>VL</span><i /><span>SONG × MEMORY LISTENING</span><MusicLibrary library={library} onPlay={player.playTrack} onRemove={async id => { if (displayTrack.id === id) audioRef.current?.pause(); if (await library.remove(id)) later.removeTrack(id); }} /></header>
+      <header className="room-header"><span>VL</span><i /><span>SONG × MEMORY LISTENING</span><div className="header-actions"><section className="ambient-controls" aria-label="环境声"><button type="button" aria-pressed={ambient.active} onClick={ambient.toggle}>{ambient.active ? "关闭环境声" : app.state.ambient.enabled ? "恢复环境声" : "环境声"}</button><label title="环境声量"><input aria-label="环境声量" type="range" min="0" max="1" step="0.05" value={app.state.ambient.volume} onChange={event=>app.setAmbient({ ...app.state.ambient,volume:Number(event.target.value) })}/></label><label title="随房间变化"><input aria-label="随房间变化" type="checkbox" checked={app.state.ambient.followRoom} onChange={event=>app.setAmbient({ ...app.state.ambient,followRoom:event.target.checked })}/>随房间</label><button type="button" onClick={()=>{audioRef.current?.pause();ambient.pauseAll();}}>全部暂停</button><span role="status">{ambient.status}</span></section><ListeningScenes scenes={app.state.scenes} playlists={app.state.playlists} room={app.state.room} ambient={app.state.ambient} onSave={app.saveScenes} onRestore={scene=>{app.setRoom(scene.room);app.setAmbient(scene.ambient);}} onPlayPlaylist={playPlaylist}/><MusicLibrary library={library} favoriteIds={app.state.favoriteTrackIds} playlists={app.state.playlists} onToggleFavorite={app.toggleFavorite} onSavePlaylists={app.savePlaylists} onPlay={player.playTrack} onAddNext={player.addNext} onAddQueue={player.addToQueue} onRemove={async id => { if (displayTrack.id === id) audioRef.current?.pause(); if (await library.remove(id)) { player.removeFromQueue(id); app.removeTrackReferences(id); } }} /></div></header>
       <div className="stage-grid">
-        <TurntableRegion track={displayTrack} isPlaying={player.isPlaying} atmosphere={atmosphere} onTogglePlayback={player.togglePlayback} />
+        <TurntableRegion track={displayTrack} isPlaying={player.isPlaying} atmosphere={atmosphere} onTogglePlayback={player.togglePlayback} roomPreferences={app.state.room} onRoomPreferencesChange={app.setRoom} />
         <ListeningRegion
           track={displayTrack}
           picks={discovery.tonightsPicks}
           radar={discovery.radar}
           player={player}
-          later={later}
           memory={memory} setMemory={setMemory} atmosphere={atmosphere}
         />
       </div>
-      <PlayerControls player={player} />
+      {app.message && <p className="local-state-message" role="status">{app.message}</p>}
+      <PlayerControls player={player} isFavorite={app.state.favoriteTrackIds.includes(displayTrack.id)} onToggleFavorite={() => app.toggleFavorite(displayTrack.id)} />
     </main>
   );
 }

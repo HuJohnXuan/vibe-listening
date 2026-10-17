@@ -31,7 +31,7 @@ test("testKeepsDesktopPlayerStableAtCommonLaptopWidths", () => {
 test("testStopsAtTrackEndWithoutForcingAutomaticNextTrack", () => {
   const pageSource = readProjectFile("src/ui/player/player-page.tsx");
 
-  assert.match(pageSource, /onEnded=\{player\.markPaused\}/);
+  assert.match(pageSource, /onEnded=\{player\.handleEnded\}/);
   assert.doesNotMatch(pageSource, /onEnded=\{player\.playNext\}/);
 });
 

@@ -59,13 +59,25 @@
 每个 `RecommendedTrack` 都包含完整 `Track`、发现路线、自然语言理由和
 来源标记。来源标记区分人工配置 `manual` 与标签回退 `tag_overlap`。
 
-## Later 状态
+## 统一播放队列（V0.2）
 
-Later 以有序、去重的曲目 ID 列表保存歌曲，状态独立于当前歌曲和推荐结果。
-第 10 步按 ID 从本地曲库解析队列显示数据；无效 ID 会被忽略，播放复用统一播放器，
-移除只改变 Later 队列，不改变当前歌曲或推荐结果。
+`PlaybackQueue` 保存 `trackIds`、`currentTrackId`、`mode` 和持久的 `shuffleOrder`。模式为 `sequence`、`shuffle`、`repeat-all` 或 `repeat-one`。关系始终使用稳定歌曲 ID；曲库恢复后过滤缺失 ID，不按数组位置替换成另一首歌。
+
+`PlayerSnapshot` 另存队列、播放位置和音量。恢复时只定位有效进度并保持暂停。
+
+## 本地应用状态（V0.2）
+
+`LocalAppState` 使用 `schemaVersion: 1`，保存在 IndexedDB v2 的 `app-state` store：
+
+- `player`：队列、当前曲目、播放模式、随机顺序、进度和音量；
+- `favoriteTrackIds`：有序去重的稳定歌曲 ID；
+- `playlists`：名称、有序歌曲 ID、创建/更新时间；
+- `scenes`：名称、房间偏好、环境声、可选歌单 ID 和时间戳；
+- `room`：房型、光线、天气、住客显示和自动活动偏好；
+- `ambient`：用户启用偏好、独立音量和随房间变化开关。
+
+歌曲音频 Blob 仍只位于 `songs`。场景不包含音频、原始路径、相机位置、住客坐标、瞬时姿势或私人记忆。
 
 ## 喜欢状态
 
-第 11 步使用页面内存中的曲目 ID 集合记录喜欢状态。它只服务于前端演示，刷新后重置，
-不写入 Later、曲库或外部服务；选中状态使用玫红反馈。
+喜欢状态保存为 `favoriteTrackIds`，刷新后恢复。收藏和取消收藏只改变 ID 列表，不删除歌曲音频或资料。

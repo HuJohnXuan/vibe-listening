@@ -3,18 +3,18 @@
 import { buildDiscovery } from "../../services/discovery/build-discovery.ts";
 import type { Recommendation } from "../../types/recommendation.ts";
 import type { Track } from "../../types/track.ts";
-import { useLaterQueue } from "./use-later-queue.ts";
 import { useLocalAudio } from "./use-local-audio.ts";
+import type { PlayerState } from "../../types/local-state.ts";
 
 export type { LocalAudioController } from "./use-local-audio.ts";
-export type { LaterQueueController } from "./use-later-queue.ts";
 
 export function usePlayerView(
   playlist: readonly Track[],
   recommendations: readonly Recommendation[],
+  restored: PlayerState | null,
+  restoreReady: boolean,
 ) {
-  const [audioRef, player] = useLocalAudio(playlist);
-  const later = useLaterQueue(playlist);
+  const [audioRef, player] = useLocalAudio(playlist, restored, restoreReady);
   const displayTrack = player.audioTrack;
   const discovery = buildDiscovery({
     currentTrackId: displayTrack.id,
@@ -22,5 +22,5 @@ export function usePlayerView(
     recommendations,
   });
 
-  return { audioRef, player, later, displayTrack, discovery };
+  return { audioRef, player, displayTrack, discovery };
 }

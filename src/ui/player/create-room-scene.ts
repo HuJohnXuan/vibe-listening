@@ -361,7 +361,7 @@ export function createRoomScene(host: HTMLDivElement, initial: RoomState, onFail
     cabinShell.forEach(object=>{object.visible=roomType==="cabin";});
     cabinFireplace.forEach(object=>{object.visible=roomType==="cabin";});
     wallShelves.forEach(object => { object.visible = roomType === "cabin"; });
-    variants.setRoom(roomType); resident.dress(roomType);
+    variants.setRoom(roomType); variants.setAtmosphere(next.room.sky,next.room.intensity); resident.dress(roomType);
     sofaFabric.color.set(roomType === "cloud" ? "#cbbfa7" : roomType === "rooftop" ? "#b7a589" : "#9b5f38");
     if (changedRoom) renderer.shadowMap.needsUpdate = true;
     dirty = true;

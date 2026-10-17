@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import 'fake-indexeddb/auto';
-import { addSong, readSongs, saveSong, removeSong, asTrack, libraryError } from '../src/adapters/local_data/music-library.ts';
+import { addSong, readSongs, saveSong, removeSong, asTrack, libraryError, readAppState, saveAppState } from '../src/adapters/local_data/music-library.ts';
 import { estimateAudioFeatures } from '../src/core/vibe/audio-features.ts';
 import { suggestedRoom } from '../src/core/vibe/room-presets.ts';
 import { rankRecommendations } from '../src/core/recommendations/rank-recommendations.ts';
@@ -20,6 +20,23 @@ function fixture() {
   const head=Buffer.alloc(8);head.write('RIFF');head.writeUInt32LE(body.length,4);
   return new Blob([head,body],{type:'audio/wav'});
 }
+
+test('v1 database upgrades without rewriting song Blob and round-trips versioned app state', async()=>{
+  await new Promise((resolve,reject)=>{const request=indexedDB.deleteDatabase('vibe-listening-music');request.onsuccess=()=>resolve();request.onerror=()=>reject(request.error);});
+  const file=fixture();
+  const db=await new Promise((resolve,reject)=>{const request=indexedDB.open('vibe-listening-music',1);request.onupgradeneeded=()=>request.result.createObjectStore('songs',{keyPath:'id'});request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+  await new Promise((resolve,reject)=>{const tx=db.transaction('songs','readwrite');tx.objectStore('songs').add({id:'legacy',title:'Legacy',artist:'',album:'',duration:12,file,fileName:'legacy.wav',genre:'',mood:'',addedAt:1});tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error);});
+  db.close();
+  const [legacy]=await readSongs();
+  assert.equal(legacy.id,'legacy');
+  assert.deepEqual(await legacy.file.arrayBuffer(),await file.arrayBuffer());
+  const initial=await readAppState();
+  assert.equal(initial.schemaVersion,1);
+  const saved={...initial,favoriteTrackIds:['legacy'],player:{...initial.player,currentTrackId:'legacy',elapsedSeconds:3,volume:.4}};
+  await saveAppState(saved);
+  assert.deepEqual(await readAppState(),saved);
+  await removeSong('legacy');
+});
 
 test('local library persists actual audio across connections, rejects duplicates, edits and removes only its copy', async()=>{
   const file=fixture();

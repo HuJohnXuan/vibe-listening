@@ -6,6 +6,7 @@ export interface TrackTags {
 }
 
 export interface Track {
+  readonly addedAt?: number;
   readonly preferredRoom?: "cabin" | "rooftop" | "cloud";
   readonly local?: boolean;
   readonly id: string;
