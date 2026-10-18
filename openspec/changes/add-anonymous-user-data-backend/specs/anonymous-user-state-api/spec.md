@@ -53,3 +53,16 @@ The API SHALL validate request bodies before accepting a state mutation and SHAL
 #### Scenario: An invalid Later update is rejected
 - **WHEN** a device submits a Later update with an invalid field type
 - **THEN** the API returns a client error and the preceding Later queue remains unchanged
+
+### Requirement: Public storage consumption is bounded
+The API SHALL reject request bodies larger than 65,536 bytes, SHALL enforce bounded scalar preference
+fields, SHALL keep only the newest 500 playback entries, and SHALL stop provisioning new device files
+when the configured user-file capacity is reached.
+
+#### Scenario: Playback history reaches its retention limit
+- **WHEN** a device records a playback start after already storing 500 entries
+- **THEN** the new entry is stored first and the oldest entry is removed
+
+#### Scenario: New-device capacity is exhausted
+- **WHEN** an unseen device attempts to create state after the configured file capacity is reached
+- **THEN** the API returns a service-capacity error without modifying another device's data

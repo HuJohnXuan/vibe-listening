@@ -30,6 +30,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -41,3 +42,9 @@ next-env.d.ts
 /outputs/
 /work/
 /.worktrees/
+
+# Python
+__pycache__/
+*.egg-info/
+.venv/
+/backend/data/

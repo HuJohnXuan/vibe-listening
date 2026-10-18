@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools==75.8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rnb-fireplace-radar-api"
+version = "0.1.0"
+description = "Anonymous user-state API for R&B Fireplace Radar"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi==0.115.12",
+  "pydantic==2.11.1",
+  "uvicorn==0.34.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx==0.28.1",
+  "pytest==8.3.5",
+  "pytest-asyncio==0.25.3",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.setuptools.packages.find]
+include = ["app*"]

@@ -1,7 +1,6 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useState } from "react";
 import { formatPlaybackTime } from "../../core/player/player-state.ts";
 import type {
   RadarRecommendations,
@@ -332,7 +331,15 @@ function ListeningRegion(
   );
 }
 
-function PlayerControls({ player }: { player: LocalAudioController }) {
+function PlayerControls({
+  player,
+  favorites,
+  syncError,
+}: {
+  player: LocalAudioController;
+  favorites: FavoriteController;
+  syncError: string;
+}) {
   const maximum = player.durationSeconds || 0;
   const progressPercent = maximum > 0
     ? Math.min(100, (player.elapsedSeconds / maximum) * 100)
@@ -356,40 +363,48 @@ function PlayerControls({ player }: { player: LocalAudioController }) {
         />
         <span>{formatPlaybackTime(player.durationSeconds)}</span>
       </div>
-      <TransportControls player={player} />
+      <TransportControls player={player} favorites={favorites} />
       {player.playbackError && <p className="playback-error" role="status">{player.playbackError}</p>}
+      {syncError && <p className="playback-error" role="status">{syncError}</p>}
     </footer>
   );
 }
 
-function FavoriteControl({ trackId }: { trackId: string }) {
-  const [favoriteTrackIds, setFavoriteTrackIds] =
-    useState<ReadonlySet<string>>(() => new Set());
-  const isFavorite = favoriteTrackIds.has(trackId);
+interface FavoriteController {
+  readonly hasTrack: (trackId: string) => boolean;
+  readonly toggleTrack: (trackId: string) => void;
+}
+
+function FavoriteControl({
+  trackId,
+  favorites,
+}: {
+  trackId: string;
+  favorites: FavoriteController;
+}) {
+  const isFavorite = favorites.hasTrack(trackId);
   const label = isFavorite ? "取消喜欢当前歌曲" : "喜欢当前歌曲";
-  const toggleFavorite = () => {
-    setFavoriteTrackIds((currentIds) => {
-      const nextIds = new Set(currentIds);
-      if (nextIds.has(trackId)) nextIds.delete(trackId);
-      else nextIds.add(trackId);
-      return nextIds;
-    });
-  };
   return (
     <button className="favorite-control" type="button" data-player-favorite="true"
       aria-label={label} title={label} aria-pressed={isFavorite}
-      onClick={toggleFavorite}>
+      onClick={() => favorites.toggleTrack(trackId)}>
       <span aria-hidden="true">{isFavorite ? "♥" : "♡"}</span>
     </button>
   );
 }
 
-function TransportControls({ player }: { player: LocalAudioController }) {
+function TransportControls({
+  player,
+  favorites,
+}: {
+  player: LocalAudioController;
+  favorites: FavoriteController;
+}) {
   const playLabel = player.isPlaying ? "暂停" : "播放";
   return (
     <div className="control-row">
       <div className="control-tools">
-        <FavoriteControl trackId={player.audioTrack.id} />
+        <FavoriteControl trackId={player.audioTrack.id} favorites={favorites} />
       </div>
       <div className="transport-controls">
         <button type="button" aria-label="上一首" title="上一首" onClick={player.playPrevious}>
@@ -408,7 +423,7 @@ function TransportControls({ player }: { player: LocalAudioController }) {
 }
 
 export function PlayerPage({ playlist, recommendations }: PlayerPageProps) {
-  const { audioRef, player, later, displayTrack, discovery } =
+  const { audioRef, player, later, displayTrack, discovery, favorites, syncError } =
     usePlayerView(playlist, recommendations);
   return (
     <main className="room-shell">
@@ -436,7 +451,7 @@ export function PlayerPage({ playlist, recommendations }: PlayerPageProps) {
           later={later}
         />
       </div>
-      <PlayerControls player={player} />
+      <PlayerControls player={player} favorites={favorites} syncError={syncError} />
     </main>
   );
 }

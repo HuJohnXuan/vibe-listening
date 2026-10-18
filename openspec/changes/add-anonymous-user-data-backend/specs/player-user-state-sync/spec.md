@@ -33,9 +33,25 @@ The player SHALL synchronize favorite changes, Later changes, playback starts, a
 - **WHEN** a user toggles a track to favorite
 - **THEN** the player updates its UI and the favorite is present after a successful page refresh
 
+#### Scenario: A user acts while state is still loading
+- **WHEN** a user changes favorites or Later before the initial state request finishes
+- **THEN** the player combines that action with restored state instead of overwriting either one
+
+#### Scenario: A user performs rapid state changes
+- **WHEN** multiple personal-state writes are triggered before an earlier write finishes
+- **THEN** the player sends them in order and the newest local state remains authoritative
+
 ### Requirement: Temporary API failures preserve player usability
 The player SHALL retain the current local interaction behavior when a user-state request fails and SHALL show a user-readable synchronization error. It SHALL not prevent local preview playback, navigation, recommendations, or Later interactions solely because the API is unavailable.
 
 #### Scenario: API is temporarily unavailable
 - **WHEN** a user-state request fails because the API cannot be reached
 - **THEN** the player remains interactive and presents a synchronization error without exposing transport details
+
+#### Scenario: A different resource later synchronizes successfully
+- **WHEN** a favorite write fails and a subsequent Later write succeeds
+- **THEN** the player retains the synchronization error because the favorite is still not persisted
+
+#### Scenario: The API base URL is absent
+- **WHEN** the player starts without a configured API base URL
+- **THEN** favorite and Later interactions remain usable for the current session and synchronization is reported unavailable

@@ -2,7 +2,7 @@
 
 See `proposal.md` for motivation. The web application is a TypeScript React/Vinext player whose `app/page.tsx` imports a local ten-track catalog and recommendation catalog. Its current favorites and Later state are React-only, and no API client, environment configuration, Python service, database, or deployment files exist. `docs/FUTURE_API.md` requires real data to enter through adapters and services rather than the recommendation core.
 
-The target server is the existing public Ubuntu host. The approved temporary API origin is `https://8.217.117.12.sslip.io`; the frontend is already deployed at `https://rnb-fireplace-radar.huyixuan.chatgpt.site`.
+The target server is the existing public Ubuntu host. The approved temporary API origin is `https://8.217.117.12.sslip.io`. The frontend remains on the user's Windows computer and runs through the existing Vinext development server at `http://localhost:3000`.
 
 ## Goals / Non-Goals
 
@@ -10,6 +10,7 @@ The target server is the existing public Ubuntu host. The approved temporary API
 - Make the approved anonymous-device state durable and restore it into the existing player.
 - Keep the local catalog, local preview files, and pure recommendation core unchanged.
 - Make API operation, test execution, TLS verification, and rollback repeatable on the target host.
+- Keep frontend source, catalog, preview assets, and runtime local while allowing it to call the server API through a public configuration value.
 - Keep each persistence update isolated to one user JSON document and reject invalid input before a write.
 
 **Non-Goals:**
@@ -17,6 +18,7 @@ The target server is the existing public Ubuntu host. The approved temporary API
 - A database, cloud storage, provider integration, catalog administration, or server-side recommendation ranking.
 - LangChain, Anthropic access, API keys, AI-generated recommendations, or new preference-setting UI.
 - Guaranteed synchronization across two browser tabs that make conflicting edits simultaneously.
+- Publishing or hosting the frontend on the public server or another hosting platform.
 
 ## Decisions
 
@@ -56,7 +58,7 @@ The repository stores `data/users/<device-id>.json` outside any static/public pa
 }
 ```
 
-For every mutation, the repository validates the full next document, writes it to a sibling temporary file, flushes it, then atomically replaces the canonical file. An in-process async lock keyed by device ID serializes same-process writes. The deployment uses a single Uvicorn worker because separate workers would require an inter-process locking primitive that is disproportionate for V1.
+For every mutation, the repository validates the full next document, writes it to a sibling temporary file, flushes it, then atomically replaces the canonical file. A fixed set of in-process async lock stripes serializes same-device writes without allowing arbitrary device IDs to grow a lock map. A global creation lock enforces the configured user-file capacity. The deployment uses a single Uvicorn worker because separate workers would require an inter-process locking primitive that is disproportionate for V1.
 
 One aggregate JSON file was rejected because unrelated users would contend for the same write. Separate files per domain collection were rejected because they weaken atomicity for a user-level read and add unnecessary filesystem coordination.
 
@@ -66,15 +68,19 @@ The frontend generates a UUID through browser cryptography, stores it under a na
 
 ### Add a frontend user-state adapter and retain optimistic interactions
 
-Add a typed `src/adapters/user_state_api/` client plus a `src/services/user_state/` coordination layer. `PlayerPage`/hooks consume the resulting controller rather than calling `fetch` directly. On initial load, the controller restores remote state; favorite and Later actions update the UI immediately and synchronize the relevant API resource; a preview start appends history once. The controller uses a public API base URL configuration value and displays a concise synchronization error while retaining current local interaction behavior.
+Add a typed `src/adapters/user_state_api/` client plus a `src/services/user_state/` coordination layer. `PlayerPage`/hooks consume the resulting controller rather than calling `fetch` directly. On initial load, the controller restores remote state; favorite and Later actions update the UI immediately and synchronize the relevant API resource; a preview start appends history once. The controller reads `NEXT_PUBLIC_API_BASE_URL`, displays a concise synchronization error, and retains current local interaction behavior.
+
+The synchronizer records local transitions made while hydration is pending, reapplies them to the restored remote state, and serializes all mutations. This prevents hydration and out-of-order responses from replacing newer user actions. Successful later writes clear a prior transient synchronization error.
 
 This preserves the existing UI → services → adapters boundary. The alternative of placing API calls in the large `player-page.tsx` would create direct infrastructure coupling in the UI and make request failures harder to test.
 
 ### Serve HTTPS through Caddy and use explicit origins
 
-Uvicorn binds only to loopback on a non-public port. Caddy listens on 80/443 for `8.217.117.12.sslip.io`, obtains and renews TLS, and reverse-proxies to Uvicorn. FastAPI CORS allows exactly the approved public frontend and the two local development origins, including `X-Device-Id` and required HTTP methods. User JSON stays in the application's data directory and is not configured as a Caddy file root.
+Uvicorn binds only to loopback on a non-public port. Caddy listens on 80/443 for `8.217.117.12.sslip.io`, obtains and renews TLS, and reverse-proxies to Uvicorn. FastAPI CORS allows exactly `http://localhost:3000` and `http://localhost:3001`, including `X-Device-Id` and required HTTP methods. User JSON stays in the application's data directory and is not configured as a Caddy file root.
 
 Direct HTTP on the server IP was rejected because the HTTPS frontend would be blocked by browser mixed-content protections. A self-signed certificate was rejected because browsers would not trust it. `sslip.io` is accepted as a V1 temporary domain with its availability risk documented.
+
+The public path is bounded at multiple layers: Caddy and FastAPI reject bodies over 64 KB, FastAPI limits requests per client IP, Pydantic restricts preference depth and field sizes, playback history retains 500 newest entries, and repository provisioning stops at the configured user-file count.
 
 ## Risks / Trade-offs
 
@@ -82,12 +88,12 @@ Direct HTTP on the server IP was rejected because the HTTPS frontend would be bl
 - [JSON is not a multi-process data store] → Use per-user documents, atomic replacement, same-process locking, and a single application worker; migrate to a database before scaling workers or hosts.
 - [Temporary `sslip.io` dependency] → Keep the API base URL configurable so a future owned domain changes configuration and Caddy only.
 - [Optimistic UI can temporarily diverge after a failed write] → Show sync failure, retain local usability, and reload canonical state on the next page load.
-- [TLS issuance needs public inbound ports] → Verify DNS resolution and ports 80/443 before deployment; roll back to the prior frontend build if the API origin cannot be verified.
+- [TLS issuance needs public inbound ports] → Verify DNS resolution and ports 80/443 before deployment; keep the local frontend on its previous configuration if the API origin cannot be verified.
 
 ## Migration Plan
 
 1. Add backend code, tests, package lock, frontend adapter, configuration documentation, and deployment assets locally.
 2. Run backend tests, frontend tests, lint, and production build; verify CORS behavior against the allowed and disallowed origins.
-3. On the server, install the pinned Python environment and Caddy, copy release files outside the web root, configure a systemd service, and start Uvicorn on loopback.
-4. Configure Caddy for `8.217.117.12.sslip.io`, verify certificate issuance and `/healthz`, then deploy the frontend with its public API base URL.
-5. Verify a browser can persist a favorite and Later item across refresh. If verification fails, roll back the frontend to the prior build and stop the service; JSON files remain available for inspection and recovery.
+3. On the server, install the pinned Python environment and Caddy, copy release files outside the web root, point one atomic `current` symlink at the release, configure a systemd service, and start Uvicorn on loopback.
+4. Configure Caddy for `8.217.117.12.sslip.io` and verify certificate issuance and `/healthz`.
+5. Configure the local frontend with `NEXT_PUBLIC_API_BASE_URL`, start it on port 3000, and verify a browser can persist a favorite and Later item across refresh. If verification fails, stop the server service; JSON files remain available for inspection and recovery.

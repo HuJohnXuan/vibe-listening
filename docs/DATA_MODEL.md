@@ -1,71 +1,28 @@
 # 数据模型
 
-## Track
+## 本地 Track
 
-`Track` 是 UI 后续消费的完整歌曲契约，定义于 `src/types/track.ts`。
+`Track` 定义于 `src/types/track.ts`，包含 `id`、`title`、`artist`、`album`、
+`coverUrl`、`previewAudioUrl`、`previewDurationSeconds`、`lyricsExcerpt`、`tags` 和
+`listeningNote`。`tags` 分为 `genres`、`moods`、`voices`、`production` 四组。
+当前 10 首虚构曲目的文字、封面和试听资源都保存在本地，不进入后端用户文件。
 
-| 字段 | 含义 |
-| --- | --- |
-| `id` | 曲目唯一标识 |
-| `title` | 歌名 |
-| `artist` | 歌手 |
-| `album` | 专辑 |
-| `coverUrl` | `public/assets/covers/` 下的本地封面 |
-| `previewAudioUrl` | `public/assets/audio/` 下的本地试听 |
-| `previewDurationSeconds` | 试听时长 |
-| `lyricsExcerpt` | 原创歌词片段 |
-| `tags` | 风格、情绪、声线和制作四类标签 |
-| `listeningNote` | 一句自然语言听感说明 |
+## 本地 Recommendation 与 DiscoveryResult
 
-当前曲库包含 10 首虚构曲目。所有文字和媒体资源均随项目保存在本地，
-不依赖数据库、真实音乐平台或外部 API。
+`Recommendation` 保存 `sourceTrackId`、`targetTrackId`、`route` 和自然语言 `reason`。
+`route` 为 `same_artist`、`same_room`、`similar_voice` 或 `production_texture`。
+`DiscoveryResult` 包含排序后的 3 首 `tonightsPicks` 和按四条路线分组的 `radar`；每个结果
+带完整 Track、理由及 `manual` 或 `tag_overlap` 来源。它们继续从本地 JSON 构建。
 
-## TrackTags
+## 匿名用户状态
 
-标签分为四个独立列表：
+服务器只保存用户状态；曲库、推荐关系、封面和试听音频继续位于本地前端。
 
-- `genres`：R&B 子风格；
-- `moods`：情绪与空间氛围；
-- `voices`：音域、音色和演唱触感；
-- `production`：器乐、录音与制作纹理。
+每个匿名设备对应 `RNB_DATA_DIRECTORY/<device-id>.json`。设备 ID 必须是 UUID，因此不能
+构造目录穿越路径。文件包含 `favorites`、有序去重的 `later`、最新在前的
+`playback_history`，以及由 `theme`、`display_options`、`music_tags` 构成的偏好。
 
-## Recommendation
-
-`Recommendation` 定义于 `src/types/recommendation.ts`，保存人工配置关系：
-
-| 字段 | 含义 |
-| --- | --- |
-| `sourceTrackId` | 当前曲目 ID |
-| `targetTrackId` | 被推荐曲目 ID |
-| `route` | 发现路线 |
-| `reason` | 自然语言推荐理由 |
-
-`route` 只能是 `same_artist`、`same_room`、`similar_voice` 或
-`production_texture`。每首示例曲目都准备了四条关系，每条路线一条，
-且目标曲目不重复、不指向自身。
-
-第 2 步只建立数据和契约，不实现排序、回退或页面展示逻辑。
-
-## DiscoveryResult
-
-推荐服务返回 `DiscoveryResult`：
-
-- `tonightsPicks`：排序后的前 3 首推荐；
-- `radar.same_artist`：同歌手深入曲目；
-- `radar.same_room`：氛围相近曲目；
-- `radar.similar_voice`：声线相近曲目；
-- `radar.production_texture`：制作质感相近曲目。
-
-每个 `RecommendedTrack` 都包含完整 `Track`、发现路线、自然语言理由和
-来源标记。来源标记区分人工配置 `manual` 与标签回退 `tag_overlap`。
-
-## Later 状态
-
-Later 以有序、去重的曲目 ID 列表保存歌曲，状态独立于当前歌曲和推荐结果。
-第 10 步按 ID 从本地曲库解析队列显示数据；无效 ID 会被忽略，播放复用统一播放器，
-移除只改变 Later 队列，不改变当前歌曲或推荐结果。
-
-## 喜欢状态
-
-第 11 步使用页面内存中的曲目 ID 集合记录喜欢状态。它只服务于前端演示，刷新后重置，
-不写入 Later、曲库或外部服务；选中状态使用玫红反馈。
+收藏、Later 和历史最大 500 项，历史溢出时删除最旧项；曲目 ID 最大 128 字符。主题与偏好
+标签最大 64 字符，最多 32 个标签；`display_options` 最多 32 个键，只允许布尔、数字、字符串
+或 null，键最大 64 字符、字符串值最大 256 字符。写入先落临时文件、`fsync`，再原子替换
+目标文件并同步父目录；失败时清理临时文件。同进程内按设备加锁，新设备创建另有全局容量锁。

@@ -27,7 +27,10 @@ export interface LocalAudioController {
   readonly markPaused: () => void;
 }
 
-export function useLocalAudio(playlist: readonly Track[]) {
+export function useLocalAudio(
+  playlist: readonly Track[],
+  onPlaybackStart: (trackId: string) => void = () => undefined,
+) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const resumeAfterChangeRef = useRef(false);
   const [trackIndex, setTrackIndex] = useState(0);
@@ -85,7 +88,10 @@ export function useLocalAudio(playlist: readonly Track[]) {
     playTrack,
     syncElapsed: () => setElapsedSeconds(audioRef.current?.currentTime ?? 0),
     syncDuration: () => setDurationSeconds(audioRef.current?.duration ?? 0),
-    markPlaying: () => setIsPlaying(true),
+    markPlaying: () => {
+      setIsPlaying(true);
+      onPlaybackStart(audioTrack.id);
+    },
     markPaused: () => setIsPlaying(false),
   };
 

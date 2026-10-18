@@ -1,0 +1,22 @@
+[Unit]
+Description=R&B Fireplace Radar FastAPI service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rnb-api
+Group=rnb-api
+WorkingDirectory=/opt/rnb-fireplace-radar/current/backend
+EnvironmentFile=/etc/rnb-fireplace-radar-api.env
+ExecStart=/opt/rnb-fireplace-radar/current/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/rnb-fireplace-radar
+
+[Install]
+WantedBy=multi-user.target
