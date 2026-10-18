@@ -1,0 +1,3 @@
+import { NextRequest, NextResponse } from "next/server";
+import { sessionClient, unavailable } from "../../../../../src/adapters/account_sync/account-api.ts";
+export async function GET(request: NextRequest) { const client=await sessionClient(request); if(!client) return unavailable(); const [profile,devices]=await Promise.all([client.from("profile_states").select("revision,payload,updated_at"),client.from("device_playback_states").select("device_id,revision,payload,updated_at")]); if(profile.error||devices.error) return NextResponse.json({error:"Unable to export account data"},{status:502}); return NextResponse.json({profile:profile.data,devicePlayback:devices.data}); }

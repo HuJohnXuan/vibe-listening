@@ -11,6 +11,8 @@ import { MusicLibrary } from "./music-library.tsx";
 import { useLocalAppState } from "./use-local-app-state.ts";
 import { ListeningScenes } from "./listening-scenes.tsx";
 import { useAmbientAudio } from "./use-ambient-audio.ts";
+import { useAccountSync } from "./use-account-sync.ts";
+import { AccountControls } from "./account-controls.tsx";
 import type { RoomPreferences } from "../../types/local-state.ts";
 import { suggestedRoom } from "../../core/vibe/room-presets.ts";
 import type {
@@ -450,6 +452,7 @@ function TransportControls({ player, isFavorite, onToggleFavorite }: { player: L
 export function PlayerPage({ playlist, recommendations }: PlayerPageProps) {
   const library = useMusicLibrary(playlist);
   const app = useLocalAppState();
+  const account = useAccountSync(app.state, app.ready, app.replaceState, library.playlist.map(track => track.id));
   const { audioRef, player, displayTrack, discovery } =
     usePlayerView(library.playlist, recommendations, app.state.player, app.ready && library.ready);
   const saveCheckpoint = Math.floor(player.elapsedSeconds / 5);
@@ -484,7 +487,7 @@ export function PlayerPage({ playlist, recommendations }: PlayerPageProps) {
         onError={player.handleError}
       />
       <div className="ambient-light" aria-hidden="true" />
-      <header className="room-header"><span>VL</span><i /><span>SONG × MEMORY LISTENING</span><div className="header-actions"><section className="ambient-controls" aria-label="环境声"><button type="button" aria-pressed={ambient.active} onClick={ambient.toggle}>{ambient.active ? "关闭环境声" : app.state.ambient.enabled ? "恢复环境声" : "环境声"}</button><label title="环境声量"><input aria-label="环境声量" type="range" min="0" max="1" step="0.05" value={app.state.ambient.volume} onChange={event=>app.setAmbient({ ...app.state.ambient,volume:Number(event.target.value) })}/></label><label title="随房间变化"><input aria-label="随房间变化" type="checkbox" checked={app.state.ambient.followRoom} onChange={event=>app.setAmbient({ ...app.state.ambient,followRoom:event.target.checked })}/>随房间</label><button type="button" onClick={()=>{audioRef.current?.pause();ambient.pauseAll();}}>全部暂停</button><span role="status">{ambient.status}</span></section><ListeningScenes scenes={app.state.scenes} playlists={app.state.playlists} room={app.state.room} ambient={app.state.ambient} onSave={app.saveScenes} onRestore={scene=>{app.setRoom(scene.room);app.setAmbient(scene.ambient);}} onPlayPlaylist={playPlaylist}/><MusicLibrary library={library} favoriteIds={app.state.favoriteTrackIds} playlists={app.state.playlists} onToggleFavorite={app.toggleFavorite} onSavePlaylists={app.savePlaylists} onPlay={player.playTrack} onAddNext={player.addNext} onAddQueue={player.addToQueue} onRemove={async id => { if (displayTrack.id === id) audioRef.current?.pause(); if (await library.remove(id)) { player.removeFromQueue(id); app.removeTrackReferences(id); } }} /></div></header>
+      <header className="room-header"><span>VL</span><i /><span>SONG × MEMORY LISTENING</span><div className="header-actions"><AccountControls sync={account} /><section className="ambient-controls" aria-label="环境声"><button type="button" aria-pressed={ambient.active} onClick={ambient.toggle}>{ambient.active ? "关闭环境声" : app.state.ambient.enabled ? "恢复环境声" : "环境声"}</button><label title="环境声量"><input aria-label="环境声量" type="range" min="0" max="1" step="0.05" value={app.state.ambient.volume} onChange={event=>app.setAmbient({ ...app.state.ambient,volume:Number(event.target.value) })}/></label><label title="随房间变化"><input aria-label="随房间变化" type="checkbox" checked={app.state.ambient.followRoom} onChange={event=>app.setAmbient({ ...app.state.ambient,followRoom:event.target.checked })}/>随房间</label><button type="button" onClick={()=>{audioRef.current?.pause();ambient.pauseAll();}}>全部暂停</button><span role="status">{ambient.status}</span></section><ListeningScenes scenes={app.state.scenes} playlists={app.state.playlists} room={app.state.room} ambient={app.state.ambient} onSave={app.saveScenes} onRestore={scene=>{app.setRoom(scene.room);app.setAmbient(scene.ambient);}} onPlayPlaylist={playPlaylist}/><MusicLibrary library={library} favoriteIds={app.state.favoriteTrackIds} playlists={app.state.playlists} onToggleFavorite={app.toggleFavorite} onSavePlaylists={app.savePlaylists} onPlay={player.playTrack} onAddNext={player.addNext} onAddQueue={player.addToQueue} onRemove={async id => { if (displayTrack.id === id) audioRef.current?.pause(); if (await library.remove(id)) { player.removeFromQueue(id); app.removeTrackReferences(id); } }} /></div></header>
       <div className="stage-grid">
         <TurntableRegion track={displayTrack} isPlaying={player.isPlaying} atmosphere={atmosphere} onTogglePlayback={player.togglePlayback} roomPreferences={app.state.room} onRoomPreferencesChange={app.setRoom} />
         <ListeningRegion

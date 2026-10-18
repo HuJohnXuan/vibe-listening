@@ -148,3 +148,7 @@ npm run lint   # 检查代码规范
 想要新的空间、发现了问题，或有更好的互动点子，欢迎 [提交 Issue](https://github.com/HuJohnXuan/vibe-listening/issues) 或 PR。反馈问题时，请附上浏览器、窗口尺寸和复现步骤。
 
 感谢 [Three.js](https://github.com/mrdoob/three.js) 提供渲染基础，以及 [cozy-room-3d](https://github.com/hugozap/cozy-room-3d) 带来的空间构成灵感；参考与采用范围见 [3D 房间文档](docs/3D_ROOM.md)。
+
+## 可选账号同步（P1）
+
+配置 Supabase 后，可用邮箱登录并同步收藏、歌单、场景、房间偏好和本设备续播。音频、封面、路径和歌曲记忆始终保留在本机；另一设备需要自行导入音乐。部署配置见 docs/SUPABASE_SETUP.md。

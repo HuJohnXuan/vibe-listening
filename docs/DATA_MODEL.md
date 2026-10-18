@@ -81,3 +81,7 @@
 ## 喜欢状态
 
 喜欢状态保存为 `favoriteTrackIds`，刷新后恢复。收藏和取消收藏只改变 ID 列表，不删除歌曲音频或资料。
+
+## P1 同步状态
+
+profile_states 保存收藏、歌单、场景、房间和环境声；device_playback_states 按 user_id 和 device_id 保存续播。两表均保存 revision 与 JSONB payload，并受 RLS 保护。

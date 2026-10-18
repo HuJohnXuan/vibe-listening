@@ -1,0 +1,4 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { sessionClient, unavailable } from "../../../../src/adapters/account_sync/account-api.ts";
+export async function DELETE(request: NextRequest) { const client=await sessionClient(request); if(!client) return unavailable(); const body=await request.json().catch(()=>null); if(body?.confirm!=="DELETE MY ACCOUNT") return NextResponse.json({error:"Confirmation required"},{status:400}); const {data:{user}}=await client.auth.getUser(); const serviceKey=process.env.SUPABASE_SERVICE_ROLE_KEY; const url=process.env.NEXT_PUBLIC_SUPABASE_URL; if(!user||!serviceKey||!url) return unavailable(); const admin=createClient(url,serviceKey); const {error}=await admin.auth.admin.deleteUser(user.id); if(error) return NextResponse.json({error:"Unable to delete account"},{status:502}); return NextResponse.json({deleted:true}); }

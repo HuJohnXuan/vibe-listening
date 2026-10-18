@@ -96,3 +96,7 @@ IndexedDB schema 从 v1 升到 v2 时只新增 `app-state` store，不遍历或�
 `PlayerPage` 按 track ID 持有本次会话的记忆，并调用纯函数 `buildListeningAtmosphere` 生成文字和 `RoomMood`。`ListeningRoom` 动态加载 `create-room-scene.ts`，把场景状态传给 Three.js；几何体和灯光只初始化一次，切歌仅更新封面、天气与光线。渲染器不访问网络服务或用户存储。
 
 右侧区域独立滚动，Radar/Later 在文档流内展开。播放、暂停和重播统一使用 Audio 元素；场景不会自行发声或改变播放顺序。细节与限制见 [3D_ROOM.md](3D_ROOM.md)。
+
+## P1 账号同步
+
+浏览器通过 Supabase 会话访问 Next.js BFF；BFF 使用用户 JWT 受 RLS 约束读写 profile 与 device playback JSONB。仅删除账号时服务器读取 service-role key。

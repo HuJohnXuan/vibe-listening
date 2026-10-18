@@ -1,0 +1,3 @@
+"use client";
+import { useState } from "react";
+export function AccountControls({sync}:{sync:{email:string|null;status:string;configured:boolean;signIn:(email:string)=>Promise<void>;signOut:()=>Promise<void>}}){const [email,setEmail]=useState("");if(!sync.configured)return <span className="account-status">本地模式</span>;return <section className="account-controls" aria-label="账号同步">{sync.email?<><span>{sync.email}</span><button type="button" onClick={()=>void sync.signOut()}>退出</button></>:<><input value={email} onChange={event=>setEmail(event.currentTarget.value)} type="email" placeholder="邮箱" aria-label="登录邮箱"/><button type="button" onClick={()=>void sync.signIn(email)} disabled={!email}>登录同步</button></>}<small role="status">{sync.status} · 音乐文件只留在本机</small></section>}

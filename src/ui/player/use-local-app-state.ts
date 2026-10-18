@@ -47,5 +47,6 @@ export function useLocalAppState(repository: LocalAppStateRepository = localAppS
     }));
   }, [update]);
 
-  return { state, ready, message, setMessage, savePlayer, toggleFavorite, savePlaylists, saveScenes, setRoom, setAmbient, removeTrackReferences, sanitizeTrackReferences, latest };
+  const replaceState = useCallback((next: LocalAppState) => update(() => next), [update]);
+  return { state, ready, message, setMessage, replaceState, savePlayer, toggleFavorite, savePlaylists, saveScenes, setRoom, setAmbient, removeTrackReferences, sanitizeTrackReferences, latest };
 }
