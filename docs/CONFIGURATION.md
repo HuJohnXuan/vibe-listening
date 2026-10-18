@@ -2,7 +2,9 @@
 
 ## 运行时配置
 
-当前 MVP 不依赖环境变量、数据库或第三方 API。
+核心播放器不依赖环境变量、数据库或第三方 API；未配置账号同步时仍以本机 IndexedDB 正常运行。
+
+可选的账号同步需要 Supabase 环境变量，完整步骤见 [Supabase 配置](SUPABASE_SETUP.md)。浏览器端只能使用 `NEXT_PUBLIC_SUPABASE_URL` 与 `NEXT_PUBLIC_SUPABASE_ANON_KEY`；`SUPABASE_SERVICE_ROLE_KEY` 仅放在服务端部署环境。
 
 ## 站点部署
 
